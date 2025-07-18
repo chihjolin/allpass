@@ -1,0 +1,435 @@
+/* 全域與基本樣式 */
+:root {
+    --primary-color: #00796b;
+    --secondary-color: #f5f5f5;
+    --text-color: #333;
+    --border-color: #ddd;
+    --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+header.trail-header {
+    padding: 1.5rem 1rem;
+    text-align: left;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+main {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #777;
+}
+
+/* 首頁：步道卡片 */
+.trail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.trail-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.trail-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+.card-content h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+/* 詳情頁 */
+.back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.back-link i {
+    margin-right: 0.5rem;
+}
+
+section {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+}
+
+h2 {
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    margin-top: 0;
+}
+
+/* 統計數據 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+.stat-item i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-item .label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.stat-item .value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* 天氣預報 */
+.weather-hourly-forecast {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+    /* for smooth scrolling on iOS */
+}
+
+.weather-card {
+    flex: 0 0 120px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    margin-right: 1rem;
+    background-color: #f9f9f9;
+}
+
+.weather-card .time {
+    font-weight: bold;
+}
+
+.weather-card .temp {
+    font-size: 1.8rem;
+    margin: 0.5rem 0;
+}
+
+.weather-card .wx-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.weather-card .pop {
+    color: #007bff;
+}
+
+/* --- 新增樣式 --- */
+
+/* 區塊標頭與按鈕 */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    margin: 0;
+    border-bottom: none;
+}
+
+.cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+    background-color: #005a4f;
+}
+
+.cta-button i {
+    margin-right: 0.5rem;
+}
+
+/* GPX 上傳區 */
+.gpx-section p {
+    margin-top: -1rem;
+    margin-bottom: 1.5rem;
+    color: #555;
+}
+
+.gpx-upload-area {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+#gpx-file-input {
+    flex-grow: 1;
+}
+
+#gpx-analyze-btn {
+    flex-shrink: 0;
+    background-color: #333;
+}
+
+#gpx-analyze-btn:hover {
+    background-color: #555;
+}
+
+.gpx-result-area {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border-left: 5px solid #22c55e;
+    border-radius: 4px;
+}
+
+/* 路線規劃頁 */
+.plan-section p {
+    color: #555;
+}
+
+.plan-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.plan-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.plan-input input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.plan-result {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+    padding: 2rem;
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+}
+
+/* --- GPX 總結資訊樣式 --- */
+.summary-section {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin: 0 15px 20px 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    font-size: 1rem;
+    color: #555;
+    border: 1px solid #e0e0e0;
+}
+
+.summary-section div {
+    flex: 1;
+}
+
+.summary-section strong {
+    display: block;
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+/* --- GPX 上傳區塊樣式 --- */
+.gpx-section {
+    background-color: #fff;
+    padding: 20px;
+    margin: 0 15px 20px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.gpx-section h2 {
+    margin-top: 0;
+}
+
+.gpx-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+#gpx-file-name {
+    color: #666;
+    font-style: italic;
+}
+
+
+/* --- 時間軸 Timeline 樣式 --- */
+#gpx-timeline-container {
+    position: relative;
+    padding-left: 50px;
+    /* 留出空間給數字圓圈和線條 */
+}
+
+/* 中央垂直線 */
+#gpx-timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    /* (圓圈寬度 40px + padding 2*5px) / 2 - (線寬 2px / 2) = 24px */
+    top: 20px;
+    bottom: 20px;
+    width: 2px;
+    background-color: #e0e0e0;
+    z-index: 1;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.timeline-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #333;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid white;
+    /* 讓圓圈看起來浮在線上 */
+}
+
+.timeline-content {
+    padding-top: 5px;
+    width: 100%;
+}
+
+.timeline-time-bubble {
+    background-color: #333;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.timeline-details {
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.timeline-details-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.timeline-details-ele {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* 航點之間的分段資訊 */
+.segment-info {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.segment-duration {
+    background-color: #f0f0f0;
+    border-radius: 12px;
+    padding: 4px 12px;
+}
+
+.segment-distance {
+    font-weight: normal;
+}

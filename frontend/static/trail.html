@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步道詳情</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- 引入 gpx-parser-js 函式庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/gpx-parser-js/dist/gpx-parser.min.js"></script>
+</head>
+
+<body>
+    <header class="trail-header">
+        <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
+        <h1 id="trail-name">讀取中...</h1>
+        <p id="trail-location">讀取中...</p>
+    </header>
+    <main>
+        <section class="stats-section">
+            <div class="section-header">
+                <h2>路線資訊</h2>
+                <a href="#" id="planning-link" class="cta-button">
+                    <i class="fa-solid fa-calculator"></i> 路線時間規劃
+                </a>
+            </div>
+            <div class="stats-grid" id="stats-grid">
+            </div>
+        </section>
+
+        <section class="gpx-section p">
+            <h2>您的 GPX 軌跡分析</h2>
+            <p>上傳您自己的 GPX 檔案，立即分析您的活動數據！</p>
+            <div class="gpx-upload-area">
+                <input type="file" id="gpx-file-input" accept=".gpx">
+                <button id="gpx-analyze-btn">分析檔案</button>
+            </div>
+            <div id="gpx-result" class="gpx-result-area">
+            </div>
+        </section>
+
+        <section class="weather-section">
+            <h2>每小時天氣預報</h2>
+            <div class="weather-hourly-forecast" id="weather-forecast">
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 登山資訊網. All rights reserved.</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+
+</html>

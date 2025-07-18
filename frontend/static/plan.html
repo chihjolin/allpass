@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>路線安排時間預測</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+    <header class="trail-header">
+        <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
+        <h1 id="plan-trail-name">路線規劃</h1>
+    </header>
+
+    <!-- 總結資訊 -->
+    <section class="summary-section" id="gpx-summary" style="display: none;">
+        <div>總時間 <strong id="total-time"></strong></div>
+        <div>總距離 <strong id="total-distance"></strong></div>
+        <div>總爬升高度 <strong id="total-ascent"></strong></div>
+    </section>
+
+    <main>
+        <!-- GPX 上傳區塊 -->
+        <section class="gpx-section">
+            <h2>GPX 軌跡記錄分析</h2>
+            <p>上傳您的 GPX 檔案，立即查看您的登山記錄時間軸。</p>
+            <div class="gpx-input-wrapper">
+                <label for="gpx-file-input" class="cta-button">
+                    <i class="fa-solid fa-upload"></i> 選擇 GPX 檔案
+                </label>
+                <input type="file" id="gpx-file-input" accept=".gpx" style="display: none;">
+                <span id="gpx-file-name">尚未選擇檔案</span>
+            </div>
+            <div id="gpx-timeline-container"></div>
+        </section>
+
+        <!-- 時間計算機 -->
+        <section class="plan-section">
+            <h2>健行時間計算機</h2>
+            <p>根據您的個人速度調整，預估健行所需時間。</p>
+            <div class="plan-grid">
+                <div class="plan-input">
+                    <label for="pace-speed">您的平路步行速度 (公里/小時)</label>
+                    <input type="number" id="pace-speed" value="4" min="1" max="10">
+                </div>
+                <div class="plan-input">
+                    <label for="pace-ascent">您的爬升速度 (公尺/小時)</label>
+                    <input type="number" id="pace-ascent" value="400" min="100" max="1000">
+                </div>
+            </div>
+            <button id="calculate-time-btn" class="cta-button">計算預估時間</button>
+            <div id="plan-result" class="plan-result"></div>
+        </section>
+    </main>
+
+    <!-- *** 關鍵變更 *** -->
+    <!-- 1. 引入新的、可靠的 gpx-parse 函式庫 -->
+    <script src="https://unpkg.com/gpx-parse@0.11.0/dist/gpx-parse.min.js"></script>
+    <!-- 2. 引入您自己的 script.js，並使用 defer 確保執行順序 -->
+    <script src="script.js" defer></script>
+</body>
+
+</html>
