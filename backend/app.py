@@ -9,11 +9,13 @@ import requests
 import gpxpy
 import gpxpy.gpx
 from resources.hello import HelloWorld
-from resources.trails import Trails
+from resources.trails import Trails, Trail
 
 
 # --- 初始化 Flask 應用 ---
 app = Flask(__name__)
+# ---本機測試用---
+#app = Flask(__name__, static_folder="../frontend/static", static_url_path="")
 #app = Flask(__name__, static_folder='public', static_url_path='')
 CORS(app)
 api = Api(app)
@@ -27,15 +29,18 @@ CWA_API_KEY=os.getenv("CWA_API_KEY")
 #DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'database.json')
 
 # ---本機測試用---
+"""
 current_path = Path(__file__).resolve()
 index_folder = current_path.parents[1] / "frontend" / "static" 
 @app.route("/")
 def serve_index():
     return send_from_directory(index_folder, 'index.html')
+"""
 
 # ---RESTful API ---
 #api.add_resource(HelloWorld, "/")
 api.add_resource(Trails, "/api/trails")
+api.add_resource(Trail, "/api/trails/<int:id>")
 
 
 

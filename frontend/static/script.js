@@ -41,7 +41,7 @@ async function loadTrailCards() {
     }
 }
 
-/*
+
 // ==========================================================
 // --- 步道詳情頁邏輯 (trail.html) ---
 // ==========================================================
@@ -93,6 +93,7 @@ function displayTrailInfo(trail) {
         <div class="stat-item"><i class="fa-solid fa-id-card"></i><div class="label">申請入山</div><div class="value">${trail.permitRequired ? '是' : '否'}</div></div>
     `;
 }
+/*
 
 // *** 使用客戶端解析 GPX，不再依賴後端 API ***
 function handleGpxUpload() {
