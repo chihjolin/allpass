@@ -64,12 +64,12 @@ async function loadTrailDetails() {
         displayTrailInfo(trail);
 
         // 3. 獲取天氣資訊 (可選)
-        // const weatherResponse = await fetch(`/api/weather/${trail.weatherStation.locationName}`);
-        // const weather = await weatherResponse.json();
-        // displayWeatherForecast(weather);
+        const weatherResponse = await fetch(`/api/weather/${trail.weatherStation.locationName}`);
+        const weather = await weatherResponse.json();
+        displayWeatherForecast(weather);
 
         // 4. *** 關鍵：為 GPX 分析按鈕設定點擊事件 ***
-        document.getElementById('gpx-analyze-btn').addEventListener('click', handleGpxUpload);
+        //document.getElementById('gpx-analyze-btn').addEventListener('click', handleGpxUpload);
 
     } catch (error) {
         console.error('無法載入步道詳情:', error);
@@ -92,6 +92,10 @@ function displayTrailInfo(trail) {
         <div class="stat-item"><i class="fa-solid fa-layer-group"></i><div class="label">難易度</div><div class="value">${trail.difficulty}</div></div>
         <div class="stat-item"><i class="fa-solid fa-id-card"></i><div class="label">申請入山</div><div class="value">${trail.permitRequired ? '是' : '否'}</div></div>
     `;
+}
+
+function displayWeatherForecast(weather){
+    document.getElementById('weather-forecast').textContent = weather.message;
 }
 /*
 
