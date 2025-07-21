@@ -65,6 +65,7 @@ async function loadTrailDetails() {
 
         // 3. 獲取天氣資訊 (可選)
         const weatherResponse = await fetch(`/api/weather/${trail.weatherStation.locationName}`);
+        if (!weatherResponse.ok) throw new Error('無法取得天氣資料');
         const weather = await weatherResponse.json();
         displayWeatherForecast(weather);
 
@@ -95,8 +96,32 @@ function displayTrailInfo(trail) {
 }
 
 function displayWeatherForecast(weather){
+    try{
+        const container = document.getElementById('weather-forecast');
+        container.innerHTML = '';
+        weather.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'weather-card';
+        card.innerHTML = `
+            <h3>${entry.time}</h3>
+            <p>🌡️ ${entry.temp}°C</p>
+            <p>🌧️ 降雨機率：${entry.pop === '-' ? 'N/A' : entry.pop + '%'}</p>
+            <p>🌤️ 天氣：${entry.wx}</p>
+        `;
+        container.appendChild(card);
+    });
+    } catch(err){
+        console.error('天氣資料錯誤：', err);
+        const container = document.getElementById('weather');
+        container.innerHTML = '<p>無法載入天氣資訊。</p>';
+
+    }
+}
+/*
+function displayWeatherForecast(weather){
     document.getElementById('weather-forecast').textContent = weather.message;
 }
+*/
 /*
 
 // *** 使用客戶端解析 GPX，不再依賴後端 API ***
