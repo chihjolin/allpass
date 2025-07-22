@@ -1,7 +1,6 @@
 // 唯一的 DOM 載入完成事件監聽器，作為整個應用的進入點
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
-    console.log(path);
     // 根據 URL 路徑，執行對應頁面的初始化函式
     if (path.includes('trail.html')) {
         loadTrailDetails();
@@ -93,7 +92,6 @@ function displayTrailInfo(trail) {
         <div class="stat-item"><i class="fa-solid fa-id-card"></i><div class="label">申請入山</div><div class="value">${trail.permitRequired ? '是' : '否'}</div></div>
     `;
 }
-/*
 
 // *** 使用客戶端解析 GPX，不再依賴後端 API ***
 function handleGpxUpload() {
@@ -202,6 +200,44 @@ async function loadPlanPage() {
     }
 }
 
+
+// 地圖載入
+const map_trail = L.map('map').setView([24, 121], 8);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map_trail);
+
+const fileInput = document.getElementById('gpx-file-input');
+
+fileInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const gpxText = event.target.result;
+
+        // 將 gpx 文字餵給 leaflet-gpx（支援文字）
+        const gpxLayer = new L.GPX(gpxText, {
+            async: true,
+            marker_options: {
+                startIconUrl: 'libs/leaflet/images/icon_blue.png',
+                shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+                endIconUrl: '/libs/leaflet/images/icon_red.png',
+            }
+        });
+
+        gpxLayer.on('loaded', function (e) {
+            map_trail.fitBounds(e.target.getBounds());
+        });
+
+        gpxLayer.addTo(map_trail);
+    };
+
+    reader.readAsText(file);
+});
+
 // === 全域或可重用的輔助函式 (Helper Functions) ===
 
 // plan.html 專用的時間預估計算機
@@ -291,4 +327,3 @@ function renderTimeline(gpx, points, container) {
         }
     });
 }
-*/
