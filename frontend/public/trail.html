@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="/libs/leaflet/leaflet.css" />
+    
+    <!-- 解壓後端傳的圖磚壓縮包 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <!-- 註冊Service Worker -->
     <link rel="manifest" href="/manifest.json">
@@ -49,7 +52,11 @@
             <p>上傳您自己的 GPX 檔案，立即分析您的活動數據！</p>
             <div class="gpx-upload-area">
                 <input type="file" id="gpx-file-input" accept=".gpx">
-                <button id="gpx-analyze-btn">分析檔案</button>
+                <button id="download-map-btn">下載地圖</button>
+                <div id="download-progress" style="width:100%;margin-top:8px;display:none;">
+                    <progress id="progress-bar" value="0" max="100" style="width:100%;"></progress>
+                    <span id="progress-text" style="font-size:0.9em;"></span>
+                </div>
             </div>
             <div id="gpx-result" class="gpx-result-area">
             </div>
