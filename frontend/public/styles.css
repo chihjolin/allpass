@@ -435,7 +435,13 @@ h2 {
 }
 
 
-#map {
+#map_trail {
+    height: 100vh;
+    width: 100%;
+}
+
+
+#map_plan {
     height: 100vh;
     width: 100%;
 }

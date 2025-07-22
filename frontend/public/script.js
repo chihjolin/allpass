@@ -154,9 +154,9 @@ function displayTrailInfo(trail) {
 // ==========================================================
 async function loadPlanPage() {
   //     // === 1. 元素選擇 ===
+  const gpxFileInput = document.getElementById('gpx-file-input');
   //     const trailNameEl = document.getElementById('plan-trail-name');
   //     const calculateBtn = document.getElementById('calculate-time-btn');
-  //     const gpxFileInput = document.getElementById('gpx-file-input');
   //     const gpxFileNameSpan = document.getElementById('gpx-file-name');
   //     const timelineContainer = document.getElementById('gpx-timeline-container');
   //     const gpxSummary = document.getElementById('gpx-summary');
@@ -195,45 +195,85 @@ async function loadPlanPage() {
       reader.readAsText(file);
     });
   }
+
+  // === 初始化 map_plan 並從 IndexedDB 顯示圖磚 ===
+  const mapPlanContainer = document.getElementById('map_plan');
+  if (mapPlanContainer && !mapPlanContainer._leaflet_id) {
+    const map_plan = L.map('map_plan').setView([24, 121], 13);
+
+    const offlineTileLayer = new L.TileLayer.IndexedDB(); // 已定義在你原本程式中
+    offlineTileLayer.addTo(map_plan);
+
+    // 加入使用者 GPX 的顯示功能（若有）
+    const gpxInput = document.getElementById('gpx-file-input');
+    if (gpxInput) {
+      gpxInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const gpxText = event.target.result;
+          const gpxLayer = new L.GPX(gpxText, {
+            async: true,
+            marker_options: {
+              startIconUrl: 'libs/leaflet/images/icon_blue.png',
+              shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+              endIconUrl: '/libs/leaflet/images/icon_red.png',
+            }
+          });
+
+          gpxLayer.on('loaded', function (e) {
+            map_plan.fitBounds(e.target.getBounds());
+          });
+
+          gpxLayer.addTo(map_plan);
+        };
+        reader.readAsText(file);
+      });
+    }
+  }
 }
 
 
-// 地圖載入
-const map_trail = L.map('map').setView([24, 121], 8);
+// 地圖載入 (trail.html)
+const map_trail_container = document.getElementById('map_trail');
+let map_trail;
+if (map_trail_container && !map_trail_container._leaflet_id) {
+  map_trail = L.map('map_trail').setView([24, 121], 8);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map_trail);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map_trail);
 
-const fileInput = document.getElementById('gpx-file-input');
+  const fileInput = document.getElementById('gpx-file-input');
+  fileInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-fileInput.addEventListener('change', function (e) {
-  const file = e.target.files[0];
-  if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const gpxText = event.target.result;
 
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    const gpxText = event.target.result;
+      // 將 gpx 文字餵給 leaflet-gpx（支援文字）
+      const gpxLayer = new L.GPX(gpxText, {
+        async: true,
+        marker_options: {
+          startIconUrl: 'libs/leaflet/images/icon_blue.png',
+          shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+          endIconUrl: '/libs/leaflet/images/icon_red.png',
+        }
+      });
 
-    // 將 gpx 文字餵給 leaflet-gpx（支援文字）
-    const gpxLayer = new L.GPX(gpxText, {
-      async: true,
-      marker_options: {
-        startIconUrl: 'libs/leaflet/images/icon_blue.png',
-        shadowUrl: '/libs/leaflet/images/marker-shadow.png',
-        endIconUrl: '/libs/leaflet/images/icon_red.png',
-      }
-    });
+      gpxLayer.on('loaded', function (e) {
+        map_trail.fitBounds(e.target.getBounds());
+      });
 
-    gpxLayer.on('loaded', function (e) {
-      map_trail.fitBounds(e.target.getBounds());
-    });
+      gpxLayer.addTo(map_trail);
+    };
 
-    gpxLayer.addTo(map_trail);
-  };
-
-  reader.readAsText(file);
-});
+    reader.readAsText(file);
+  });
+}
 
 // ====== IndexedDB 操作 ======
 const DB_NAME = 'offline-map-db';
@@ -480,89 +520,89 @@ if ('serviceWorker' in navigator) {
 // === 全域或可重用的輔助函式 (Helper Functions) ===
 
 // plan.html 專用的時間預估計算機
-function calculateEstimatedTime(trail) {
-  const speed = parseFloat(document.getElementById('pace-speed').value);
-  const ascentRate = parseFloat(document.getElementById('pace-ascent').value);
-  const distanceKm = parseFloat(trail.stats.distance);
-  const ascentM = parseFloat(trail.stats.ascent);
-  if (isNaN(speed) || isNaN(ascentRate)) {
-    alert('請輸入有效的數字');
-    return;
-  }
-  const timeForDistance = distanceKm / speed;
-  const timeForAscent = ascentM / ascentRate;
-  const totalHours = timeForDistance + timeForAscent;
-  const hours = Math.floor(totalHours);
-  const minutes = Math.round((totalHours - hours) * 60);
-  const resultDiv = document.getElementById('plan-result');
-  resultDiv.innerHTML = `預估您的健行時間約為：<br><strong>${hours} 小時 ${minutes} 分鐘</strong>`;
-}
+// function calculateEstimatedTime(trail) {
+//   const speed = parseFloat(document.getElementById('pace-speed').value);
+//   const ascentRate = parseFloat(document.getElementById('pace-ascent').value);
+//   const distanceKm = parseFloat(trail.stats.distance);
+//   const ascentM = parseFloat(trail.stats.ascent);
+//   if (isNaN(speed) || isNaN(ascentRate)) {
+//     alert('請輸入有效的數字');
+//     return;
+//   }
+//   const timeForDistance = distanceKm / speed;
+//   const timeForAscent = ascentM / ascentRate;
+//   const totalHours = timeForDistance + timeForAscent;
+//   const hours = Math.floor(totalHours);
+//   const minutes = Math.round((totalHours - hours) * 60);
+//   const resultDiv = document.getElementById('plan-result');
+//   resultDiv.innerHTML = `預估您的健行時間約為：<br><strong>${hours} 小時 ${minutes} 分鐘</strong>`;
+// }
 
-// plan.html 專用的 GPX 解析與時間軸渲染
-function processGpxForTimeline(gpxData, timelineContainer, gpxSummary) {
-  try {
-    const gpx = new gpxParser();
-    gpx.parse(gpxData);
-    let pointsForTimeline = [];
-    if (gpx.waypoints && gpx.waypoints.length > 0) {
-      pointsForTimeline = gpx.waypoints;
-    } else if (gpx.tracks && gpx.tracks.length > 0 && gpx.tracks[0].points.length > 0) {
-      pointsForTimeline = sampleTrackPoints(gpx.tracks[0].points, 5);
-    } else {
-      throw new Error("GPX 檔案不包含航點 (waypoints) 或軌跡 (tracks)。");
-    }
-    timelineContainer.innerHTML = '';
-    gpxSummary.style.display = 'flex';
-    renderSummary(gpx, pointsForTimeline);
-    renderTimeline(gpx, pointsForTimeline, timelineContainer);
-  } catch (error) {
-    console.error('GPX 解析失敗:', error);
-    timelineContainer.innerHTML = `<p style="color: red;">GPX 檔案解析失敗: ${error.message}</p>`;
-    gpxSummary.style.display = 'none';
-  }
-}
+// // plan.html 專用的 GPX 解析與時間軸渲染
+// function processGpxForTimeline(gpxData, timelineContainer, gpxSummary) {
+//   try {
+//     const gpx = new gpxParser();
+//     gpx.parse(gpxData);
+//     let pointsForTimeline = [];
+//     if (gpx.waypoints && gpx.waypoints.length > 0) {
+//       pointsForTimeline = gpx.waypoints;
+//     } else if (gpx.tracks && gpx.tracks.length > 0 && gpx.tracks[0].points.length > 0) {
+//       pointsForTimeline = sampleTrackPoints(gpx.tracks[0].points, 5);
+//     } else {
+//       throw new Error("GPX 檔案不包含航點 (waypoints) 或軌跡 (tracks)。");
+//     }
+//     timelineContainer.innerHTML = '';
+//     gpxSummary.style.display = 'flex';
+//     renderSummary(gpx, pointsForTimeline);
+//     renderTimeline(gpx, pointsForTimeline, timelineContainer);
+//   } catch (error) {
+//     console.error('GPX 解析失敗:', error);
+//     timelineContainer.innerHTML = `<p style="color: red;">GPX 檔案解析失敗: ${error.message}</p>`;
+//     gpxSummary.style.display = 'none';
+//   }
+// }
 
-function sampleTrackPoints(trackPoints, numSamples = 5) {
-  const totalPoints = trackPoints.length;
-  if (totalPoints <= numSamples) return trackPoints.map((p, i) => ({ ...p, name: `軌跡點 ${i + 1}` }));
-  const sampledPoints = [];
-  const indices = new Set([0, totalPoints - 1]);
-  for (let i = 1; i < numSamples - 1; i++) {
-    indices.add(Math.floor(totalPoints * (i / (numSamples - 1))));
-  }
-  [...indices].sort((a, b) => a - b).forEach((index, i) => {
-    const point = trackPoints[index];
-    let name = `路線 ${Math.round((index / totalPoints) * 100)}% 處`;
-    if (i === 0) name = "路線起點";
-    if (i === indices.size - 1) name = "路線終點";
-    sampledPoints.push({ ...point, name: name });
-  });
-  return sampledPoints;
-}
+// function sampleTrackPoints(trackPoints, numSamples = 5) {
+//   const totalPoints = trackPoints.length;
+//   if (totalPoints <= numSamples) return trackPoints.map((p, i) => ({ ...p, name: `軌跡點 ${i + 1}` }));
+//   const sampledPoints = [];
+//   const indices = new Set([0, totalPoints - 1]);
+//   for (let i = 1; i < numSamples - 1; i++) {
+//     indices.add(Math.floor(totalPoints * (i / (numSamples - 1))));
+//   }
+//   [...indices].sort((a, b) => a - b).forEach((index, i) => {
+//     const point = trackPoints[index];
+//     let name = `路線 ${Math.round((index / totalPoints) * 100)}% 處`;
+//     if (i === 0) name = "路線起點";
+//     if (i === indices.size - 1) name = "路線終點";
+//     sampledPoints.push({ ...point, name: name });
+//   });
+//   return sampledPoints;
+// }
 
-function renderSummary(gpx, timelinePoints) {
-  const fullTrack = gpx.tracks[0];
-  const totalDistance = (fullTrack?.distance.total / 1000).toFixed(1) || 0;
-  const totalAscent = Math.round(fullTrack?.elevation.pos) || 0;
-  const startTime = new Date(timelinePoints[0].time);
-  const endTime = new Date(timelinePoints[timelinePoints.length - 1].time);
-  const totalMilliseconds = endTime - startTime;
-  const hours = Math.floor(totalMilliseconds / 3600000);
-  const minutes = Math.round((totalMilliseconds % 3600000) / 60000);
-  document.getElementById('total-time').textContent = `${hours} h ${minutes} m`;
-  document.getElementById('total-distance').textContent = `${totalDistance} km`;
-  document.getElementById('total-ascent').textContent = `${totalAscent} m`;
-}
+// function renderSummary(gpx, timelinePoints) {
+//   const fullTrack = gpx.tracks[0];
+//   const totalDistance = (fullTrack?.distance.total / 1000).toFixed(1) || 0;
+//   const totalAscent = Math.round(fullTrack?.elevation.pos) || 0;
+//   const startTime = new Date(timelinePoints[0].time);
+//   const endTime = new Date(timelinePoints[timelinePoints.length - 1].time);
+//   const totalMilliseconds = endTime - startTime;
+//   const hours = Math.floor(totalMilliseconds / 3600000);
+//   const minutes = Math.round((totalMilliseconds % 3600000) / 60000);
+//   document.getElementById('total-time').textContent = `${hours} h ${minutes} m`;
+//   document.getElementById('total-distance').textContent = `${totalDistance} km`;
+//   document.getElementById('total-ascent').textContent = `${totalAscent} m`;
+// }
 
-function renderTimeline(gpx, points, container) {
-  points.forEach((point, index) => {
-    const item = document.createElement('div');
-    item.className = 'timeline-item';
-    const time = new Date(point.time);
-    const formattedTime = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
-    item.innerHTML = `...`;
-    container.appendChild(item);
-    if (index < points.length - 1) {
-    }
-  });
-}
+// function renderTimeline(gpx, points, container) {
+//   points.forEach((point, index) => {
+//     const item = document.createElement('div');
+//     item.className = 'timeline-item';
+//     const time = new Date(point.time);
+//     const formattedTime = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
+//     item.innerHTML = `...`;
+//     container.appendChild(item);
+//     if (index < points.length - 1) {
+//     }
+//   });
+// }

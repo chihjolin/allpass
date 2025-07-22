@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="/libs/leaflet/leaflet.css" />
-    
+
     <!-- 解壓後端傳的圖磚壓縮包 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -18,13 +18,13 @@
     <link rel="icon" href="/icons/icon-192.png">
 
     <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW 註冊成功', reg.scope))
-            .catch(err => console.log('SW 註冊失敗', err));
-        });
-    }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW 註冊成功', reg.scope))
+                    .catch(err => console.log('SW 註冊失敗', err));
+            });
+        }
     </script>
 
 </head>
@@ -64,7 +64,7 @@
 
         <!-- 地圖 -->
         <section class="map-section">
-            <div id="map"></div>
+            <div id="map_trail"></div>
         </section>
 
         <section class="weather-section">
