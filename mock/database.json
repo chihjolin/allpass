@@ -4,11 +4,11 @@
             "id": "hehuan-main",
             "name": "合歡主峰",
             "location": "南投縣仁愛鄉",
-            "difficulty": "低",
+            "difficulty": "L",
             "permitRequired": false,
             "planningPageUrl": "/plan.html?id=hehuan-main",
             "stats": {
-                "totalTime": "1 小時 30 分鐘",
+                "totalTime": "1.5 小時",
                 "distance": "3.6 公里",
                 "ascent": "150 公尺",
                 "descent": "150 公尺"
@@ -21,7 +21,7 @@
             "id": "hehuan-north",
             "name": "合歡北峰",
             "location": "南投縣仁愛鄉",
-            "difficulty": "中",
+            "difficulty": "M",
             "permitRequired": false,
             "planningPageUrl": "/plan.html?id=hehuan-north",
             "stats": {
@@ -38,7 +38,7 @@
             "id": "yangmingshan-east",
             "name": "陽明山東段縱走",
             "location": "臺北市士林區",
-            "difficulty": "高",
+            "difficulty": "H",
             "permitRequired": false,
             "planningPageUrl": "/plan.html?id=yangmingshan-east",
             "stats": {
@@ -55,7 +55,7 @@
             "id": "taoshan-waterfall",
             "name": "桃山瀑布",
             "location": "臺中市和平區",
-            "difficulty": "低",
+            "difficulty": "L",
             "permitRequired": true,
             "planningPageUrl": "/plan.html?id=taoshan-waterfall",
             "stats": {
