@@ -182,142 +182,103 @@ function handleGpxUpload() {
     resultArea.innerHTML = '<p>分析中，請稍候...</p>';
     reader.readAsText(file);
 }
-
+*/
 // ==========================================================
 // --- 路線規劃頁邏輯 (plan.html) ---
 // ==========================================================
+// ✨ 更新後的路線規劃頁邏輯
 async function loadPlanPage() {
-    // === 1. 元素選擇 ===
-    const trailNameEl = document.getElementById('plan-trail-name');
-    const calculateBtn = document.getElementById('calculate-time-btn');
-    const gpxFileInput = document.getElementById('gpx-file-input');
-    const gpxFileNameSpan = document.getElementById('gpx-file-name');
-    const timelineContainer = document.getElementById('gpx-timeline-container');
-    const gpxSummary = document.getElementById('gpx-summary');
-
-    // === 2. 初始資料載入 (可選，如果需要的話) ===
-    // 如果 plan.html 需要顯示步道名稱，則保留這段
     const urlParams = new URLSearchParams(window.location.search);
     const trailId = urlParams.get('id');
-    if (trailId) {
-        try {
-            const trailRes = await fetch(`/api/trails/${trailId}`);
-            if (!trailRes.ok) throw new Error('Trail not found for planning');
-            const trail = await trailRes.json();
-            trailNameEl.textContent = `規劃: ${trail.name}`;
 
-            // 為時間計算機設定事件
-            if (calculateBtn) {
-                calculateBtn.addEventListener('click', () => calculateEstimatedTime(trail));
-            }
-        } catch (error) {
-            trailNameEl.textContent = '無法載入步道資訊';
-            console.error('無法載入步道 для規劃頁面:', error);
-        }
-    } else {
-        trailNameEl.textContent = '路線規劃'; // 提供一個通用標題
+    // --- 設定 GPX 上傳按鈕的事件監聽 ---
+    const analyzeBtn = document.getElementById('gpx-analyze-btn');
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', handlePlanPageGpxUpload);
     }
 
-    // === 3. GPX 上傳與時間軸功能設定 ===
-    if (gpxFileInput) {
-        gpxFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            gpxFileNameSpan.textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = (e) => processGpxForTimeline(e.target.result, timelineContainer, gpxSummary);
-            reader.readAsText(file);
-        });
-    }
+    // --- 如果有 trailId，才執行原有的時間計算機功能 ---
+    // if (trailId) {
+    //     try {
+    //         const trailRes = await fetch(`/api/trails/${trailId}`);
+    //         const trail = await trailRes.json();
+
+    //         document.getElementById('plan-trail-name').textContent = `規劃: ${trail.name}`;
+
+    //         const calculateBtn = document.getElementById('calculate-time-btn');
+    //         calculateBtn.addEventListener('click', () => {
+    //             // ... (此處省略未變更的計算邏輯) ...
+    //         });
+    //     } catch (error) {
+    //         console.error("無法載入步道資料進行規劃:", error);
+    //     }
+    // }
 }
 
-// === 全域或可重用的輔助函式 (Helper Functions) ===
+// ✨ 全新的函式：處理規劃頁的 GPX 上傳
+async function handlePlanPageGpxUpload() {
+    const fileInput = document.getElementById('gpx-file-input');
+    const timelineDisplay = document.getElementById('gpx-timeline-display');
 
-// plan.html 專用的時間預估計算機
-function calculateEstimatedTime(trail) {
-    const speed = parseFloat(document.getElementById('pace-speed').value);
-    const ascentRate = parseFloat(document.getElementById('pace-ascent').value);
-    const distanceKm = parseFloat(trail.stats.distance);
-    const ascentM = parseFloat(trail.stats.ascent);
-    if (isNaN(speed) || isNaN(ascentRate)) {
-        alert('請輸入有效的數字');
+    if (fileInput.files.length === 0) {
+        timelineDisplay.innerHTML = '<p style="color: red;">請先選擇一個 GPX 檔案。</p>';
         return;
     }
-    const timeForDistance = distanceKm / speed;
-    const timeForAscent = ascentM / ascentRate;
-    const totalHours = timeForDistance + timeForAscent;
-    const hours = Math.floor(totalHours);
-    const minutes = Math.round((totalHours - hours) * 60);
-    const resultDiv = document.getElementById('plan-result');
-    resultDiv.innerHTML = `預估您的健行時間約為：<br><strong>${hours} 小時 ${minutes} 分鐘</strong>`;
-}
 
-// plan.html 專用的 GPX 解析與時間軸渲染
-function processGpxForTimeline(gpxData, timelineContainer, gpxSummary) {
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('gpxFile', file);
+
+    timelineDisplay.innerHTML = '<p>分析中，請稍候...</p>';
+
     try {
-        const gpx = new gpxParser();
-        gpx.parse(gpxData);
-        let pointsForTimeline = [];
-        if (gpx.waypoints && gpx.waypoints.length > 0) {
-            pointsForTimeline = gpx.waypoints;
-        } else if (gpx.tracks && gpx.tracks.length > 0 && gpx.tracks[0].points.length > 0) {
-            pointsForTimeline = sampleTrackPoints(gpx.tracks[0].points, 5);
-        } else {
-            throw new Error("GPX 檔案不包含航點 (waypoints) 或軌跡 (tracks)。");
-        }
-        timelineContainer.innerHTML = '';
-        gpxSummary.style.display = 'flex';
-        renderSummary(gpx, pointsForTimeline);
-        renderTimeline(gpx, pointsForTimeline, timelineContainer);
+        const response = await fetch('/api/gpxanalyzer', {
+            method: 'POST',
+            body: formData,
+        });
+        const result = await response.json();
+
+        if (!response.ok) { throw new Error(result.message || '分析失敗'); }
+
+        displayGpxTimeline(result);
+
     } catch (error) {
-        console.error('GPX 解析失敗:', error);
-        timelineContainer.innerHTML = `<p style="color: red;">GPX 檔案解析失敗: ${error.message}</p>`;
-        gpxSummary.style.display = 'none';
+        timelineDisplay.innerHTML = `<p style="color: red;">分析出錯: ${error.message}</p>`;
     }
 }
 
-function sampleTrackPoints(trackPoints, numSamples = 5) {
-    const totalPoints = trackPoints.length;
-    if (totalPoints <= numSamples) return trackPoints.map((p, i) => ({ ...p, name: `軌跡點 ${i + 1}` }));
-    const sampledPoints = [];
-    const indices = new Set([0, totalPoints - 1]);
-    for (let i = 1; i < numSamples - 1; i++) {
-        indices.add(Math.floor(totalPoints * (i / (numSamples - 1))));
+// ✨ 全新的函式：將後端回傳的資料渲染成時間軸
+function displayGpxTimeline(data) {
+    const timelineDisplay = document.getElementById('gpx-timeline-display');
+
+    if (!data.waypoints || data.waypoints.length === 0) {
+        timelineDisplay.innerHTML = '<p>此 GPX 檔案中未找到可顯示的航點 (Waypoints)。</p>';
+        return;
     }
-    [...indices].sort((a, b) => a - b).forEach((index, i) => {
-        const point = trackPoints[index];
-        let name = `路線 ${Math.round((index / totalPoints) * 100)}% 處`;
-        if (i === 0) name = "路線起點";
-        if (i === indices.size - 1) name = "路線終點";
-        sampledPoints.push({ ...point, name: name });
-    });
-    return sampledPoints;
-}
 
-function renderSummary(gpx, timelinePoints) {
-    const fullTrack = gpx.tracks[0];
-    const totalDistance = (fullTrack?.distance.total / 1000).toFixed(1) || 0;
-    const totalAscent = Math.round(fullTrack?.elevation.pos) || 0;
-    const startTime = new Date(timelinePoints[0].time);
-    const endTime = new Date(timelinePoints[timelinePoints.length - 1].time);
-    const totalMilliseconds = endTime - startTime;
-    const hours = Math.floor(totalMilliseconds / 3600000);
-    const minutes = Math.round((totalMilliseconds % 3600000) / 60000);
-    document.getElementById('total-time').textContent = `${hours} h ${minutes} m`;
-    document.getElementById('total-distance').textContent = `${totalDistance} km`;
-    document.getElementById('total-ascent').textContent = `${totalAscent} m`;
-}
+    // 顯示總結資訊
+    const summaryHtml = `
+        <div class="timeline-summary">
+            <span><i class="fa-solid fa-clock"></i> ${data.summary.totalTime}</span>
+            <span><i class="fa-solid fa-route"></i> ${data.summary.distance}</span>
+            <span><i class="fa-solid fa-arrow-trend-up"></i> ${data.summary.ascent}</span>
+        </div>
+    `;
 
-function renderTimeline(gpx, points, container) {
-    points.forEach((point, index) => {
-        const item = document.createElement('div');
-        item.className = 'timeline-item';
-        const time = new Date(point.time);
-        const formattedTime = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
-        item.innerHTML = `...`;
-        container.appendChild(item);
-        if (index < points.length - 1) {
-        }
-    });
+    // 產生每個航點的 HTML
+    const waypointsHtml = data.waypoints.map((point, index) => `
+        <div class="timeline-item">
+            <div class="timeline-marker">
+                <div class="number">${index + 1}</div>
+                ${point.time ? `<div class="time-bubble">${point.time}</div>` : ''}
+            </div>
+            <div class="timeline-content">
+                <div class="name">${point.name || '未命名航點'}</div>
+                <div class="elevation">${point.elevation}</div>
+            </div>
+            <div class="timeline-connector"></div>
+        </div>
+    `).join('');
+
+    timelineDisplay.innerHTML = summaryHtml + waypointsHtml;
 }
-*/

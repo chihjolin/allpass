@@ -11,6 +11,7 @@ import gpxpy.gpx
 from resources.hello import HelloWorld
 from resources.trails import Trails, Trail
 from resources.weather import Weather
+from resources.gpxanalyzer import GpxAnalyzer
 
 
 # --- 初始化 Flask 應用 ---
@@ -43,6 +44,7 @@ def serve_index():
 api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
+api.add_resource(GpxAnalyzer, "/api/gpxanalyzer")
 
 
 
