@@ -196,23 +196,6 @@ async function loadPlanPage() {
     if (analyzeBtn) {
         analyzeBtn.addEventListener('click', handlePlanPageGpxUpload);
     }
-
-    // --- 如果有 trailId，才執行原有的時間計算機功能 ---
-    // if (trailId) {
-    //     try {
-    //         const trailRes = await fetch(`/api/trails/${trailId}`);
-    //         const trail = await trailRes.json();
-
-    //         document.getElementById('plan-trail-name').textContent = `規劃: ${trail.name}`;
-
-    //         const calculateBtn = document.getElementById('calculate-time-btn');
-    //         calculateBtn.addEventListener('click', () => {
-    //             // ... (此處省略未變更的計算邏輯) ...
-    //         });
-    //     } catch (error) {
-    //         console.error("無法載入步道資料進行規劃:", error);
-    //     }
-    // }
 }
 
 // ✨ 全新的函式：處理規劃頁的 GPX 上傳
@@ -281,4 +264,325 @@ function displayGpxTimeline(data) {
     `).join('');
 
     timelineDisplay.innerHTML = summaryHtml + waypointsHtml;
+}
+
+// === 初始化 map_plan 並從 IndexedDB 顯示圖磚 ===
+  const mapPlanContainer = document.getElementById('map_plan');
+  if (mapPlanContainer && !mapPlanContainer._leaflet_id) {
+    const map_plan = L.map('map_plan').setView([24, 121], 13);
+
+    const offlineTileLayer = new L.TileLayer.IndexedDB(); // 已定義在你原本程式中
+    offlineTileLayer.addTo(map_plan);
+
+    // 加入使用者 GPX 的顯示功能（若有）
+    const gpxInput = document.getElementById('gpx-file-input');
+    if (gpxInput) {
+      gpxInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const gpxText = event.target.result;
+          const gpxLayer = new L.GPX(gpxText, {
+            async: true,
+            marker_options: {
+              startIconUrl: 'libs/leaflet/images/icon_blue.png',
+              shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+              endIconUrl: '/libs/leaflet/images/icon_red.png',
+            }
+          });
+
+          gpxLayer.on('loaded', function (e) {
+            map_plan.fitBounds(e.target.getBounds());
+          });
+
+          gpxLayer.addTo(map_plan);
+        };
+        reader.readAsText(file);
+      });
+    }
+  }
+//}
+
+
+// 地圖載入 (trail.html)
+const map_trail_container = document.getElementById('map_trail');
+let map_trail;
+if (map_trail_container && !map_trail_container._leaflet_id) {
+  map_trail = L.map('map_trail').setView([24, 121], 8);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map_trail);
+
+  const fileInput = document.getElementById('gpx-file-input');
+  fileInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const gpxText = event.target.result;
+
+      // 將 gpx 文字餵給 leaflet-gpx（支援文字）
+      const gpxLayer = new L.GPX(gpxText, {
+        async: true,
+        marker_options: {
+          startIconUrl: 'libs/leaflet/images/icon_blue.png',
+          shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+          endIconUrl: '/libs/leaflet/images/icon_red.png',
+        }
+      });
+
+      gpxLayer.on('loaded', function (e) {
+        map_trail.fitBounds(e.target.getBounds());
+      });
+
+      gpxLayer.addTo(map_trail);
+    };
+
+    reader.readAsText(file);
+  });
+}
+
+// ====== IndexedDB 操作 ======
+const DB_NAME = 'offline-map-db';
+const TILE_STORE = 'tiles';
+const STATIC_STORE = 'static';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = function (e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(TILE_STORE)) db.createObjectStore(TILE_STORE);
+      if (!db.objectStoreNames.contains(STATIC_STORE)) db.createObjectStore(STATIC_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveTileToDB(key, blob) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(TILE_STORE, 'readwrite');
+    tx.objectStore(TILE_STORE).put(blob, key);
+    await tx.complete;
+    // 新增 debug log
+    console.log('已存入tile:', key);
+  } catch (e) {
+    console.error('存tile進IndexedDB失敗:', key, e);
+  }
+}
+
+async function getTileFromDB(key) {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const req = db.transaction(TILE_STORE).objectStore(TILE_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+}
+
+async function saveStaticToDB(key, blob) {
+  const db = await openDB();
+  const tx = db.transaction(STATIC_STORE, 'readwrite');
+  tx.objectStore(STATIC_STORE).put(blob, key);
+  return tx.complete;
+}
+
+async function getStaticFromDB(key) {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const req = db.transaction(STATIC_STORE).objectStore(STATIC_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+}
+
+// ====== GPX 上傳後分析tile範圍 ======
+async function handleGpxUpload(file) {
+  // 取得進度條元素
+  const progressDiv = document.getElementById('download-progress');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  if (progressDiv) {
+    progressDiv.style.display = '';
+    progressBar.value = 0;
+    progressText.textContent = '開始下載圖磚...';
+  }
+
+  // 1. 解析GPX取得經緯度範圍
+  const text = await file.text();
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(text, "application/xml");
+  const lats = Array.from(xml.querySelectorAll("trkpt")).map(pt => parseFloat(pt.getAttribute("lat")));
+  const lons = Array.from(xml.querySelectorAll("trkpt")).map(pt => parseFloat(pt.getAttribute("lon")));
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+
+  // 2. 計算所需z/x/y範圍 (以15~16級為例)
+  function lon2tile(lon, z) { return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
+  function lat2tile(lat, z) {
+    return Math.floor(
+      (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z)
+    );
+  }
+  const zooms = [15, 16];
+  let tiles = [];
+  zooms.forEach(z => {
+    const x1 = lon2tile(minLon, z), x2 = lon2tile(maxLon, z);
+    const y1 = lat2tile(maxLat, z), y2 = lat2tile(minLat, z);
+    for (let x = x1; x <= x2; x++) {
+      for (let y = y1; y <= y2; y++) {
+        tiles.push({ z, x, y });
+      }
+    }
+  });
+
+  // 3. 呼叫API下載圖磚zip
+  if (progressText) progressText.textContent = '下載圖磚壓縮包...';
+  const resp = await fetch('/api/tiles/download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tiles })
+  });
+
+  if (!resp.ok) {
+    if (progressDiv) progressDiv.style.display = 'none';
+    let msg = '下載圖磚時發生錯誤';
+    try {
+      const err = await resp.json();
+      msg = err.message || msg;
+    } catch (e) { }
+    alert(msg);
+    return;
+  }
+
+  const zipBlob = await resp.blob();
+
+  // 嘗試用 JSZip 解壓，若不是 zip 會報錯
+  let zip;
+  try {
+    zip = await JSZip.loadAsync(zipBlob);
+  } catch (e) {
+    if (progressDiv) progressDiv.style.display = 'none';
+    alert('伺服器回傳的不是有效的圖磚壓縮包，請稍後再試。');
+    return;
+  }
+  const fileNames = Object.keys(zip.files);
+  if (fileNames.length === 0) {
+    if (progressDiv) progressDiv.style.display = 'none';
+    alert('圖磚壓縮包內沒有任何檔案，請檢查API回傳。');
+    return;
+  }
+  let count = 0;
+  const pngFiles = fileNames.filter(fn => fn.endsWith('.png'));
+  const total = pngFiles.length;
+  for (const [idx, filename] of pngFiles.entries()) {
+    const blob = await zip.files[filename].async('blob');
+    await saveTileToDB(filename, blob);
+    count++;
+    if (progressBar) progressBar.value = Math.round((count / total) * 100);
+    if (progressText) progressText.textContent = `正在儲存圖磚 (${count}/${total})`;
+  }
+  if (progressBar) progressBar.value = 100;
+  if (progressText) progressText.textContent = '完成！';
+  setTimeout(() => {
+    if (progressDiv) progressDiv.style.display = 'none';
+  }, 1200);
+  alert(`離線地圖圖磚已存入本機！共存入 ${count} 張圖磚。`);
+}
+
+// ====== Leaflet 自訂tileLayer從IndexedDB取tile ======
+L.TileLayer.IndexedDB = L.TileLayer.extend({
+  getTileUrl: function (coords) {
+    return `${coords.z}/${coords.x}/${coords.y}.png`;
+  },
+  createTile: function (coords, done) {
+    const key = this.getTileUrl(coords);
+    const img = document.createElement('img');
+    img.alt = '';
+    img.setAttribute('role', 'presentation');
+    getTileFromDB(key).then(blob => {
+      if (blob) {
+        img.src = URL.createObjectURL(blob);
+      } else {
+        // fallback: 線上取得
+        img.src = `https://tile.openstreetmap.org/${key}`;
+      }
+      done(null, img);
+    });
+    return img;
+  }
+});
+
+// ====== 存靜態資源進IndexedDB (首次啟動時) ======
+async function cacheStatics() {
+  const statics = [
+    '/index.html', '/plan.html', '/trail.html', '/script.js', '/styles.css',
+    '/manifest.json', '/libs/leaflet/leaflet.css', '/libs/leaflet/leaflet.js',
+    '/libs/leaflet/images/marker-icon.png', '/libs/leaflet/images/marker-icon-2x.png',
+    '/libs/leaflet/images/marker-shadow.png'
+  ];
+  for (const url of statics) {
+    const resp = await fetch(url);
+    if (resp.ok) {
+      const blob = await resp.blob();
+      await saveStaticToDB(url, blob);
+    }
+  }
+}
+
+// ====== trail.html GPX上傳事件掛載 ======
+document.addEventListener('DOMContentLoaded', () => {
+  // ...existing code...
+  const gpxInput = document.getElementById('gpx-file-input');
+  const downloadMapBtn = document.getElementById('download-map-btn');
+  let lastGpxFile = null;
+
+  if (gpxInput) {
+    gpxInput.addEventListener('change', (e) => {
+      lastGpxFile = e.target.files[0];
+    });
+  }
+  if (downloadMapBtn) {
+    downloadMapBtn.addEventListener('click', async () => {
+      if (!lastGpxFile) {
+        alert('請先選擇一個 GPX 檔案');
+        return;
+      }
+      await handleGpxUpload(lastGpxFile);
+    });
+  }
+  // 首次啟動時存靜態資源
+  cacheStatics();
+  // ...existing code...
+});
+
+// Service Worker 與 IndexedDB 協作：監聽 SW 請求
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', async (event) => {
+    const data = event.data;
+    if (data && data.type === 'GET_IDB') {
+      let result = null;
+      if (data.dbType === 'tiles') {
+        result = await getTileFromDB(data.key);
+      } else if (data.dbType === 'static') {
+        result = await getStaticFromDB(data.key);
+      }
+      if (result) {
+        // 讀出 ArrayBuffer
+        const arrayBuffer = await result.arrayBuffer();
+        event.ports[0].postMessage({
+          found: true,
+          buffer: arrayBuffer,
+          contentType: result.type
+        }, [arrayBuffer]);
+      } else {
+        event.ports[0].postMessage({ found: false });
+      }
+    }
+  });
 }
