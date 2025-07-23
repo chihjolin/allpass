@@ -10,7 +10,6 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from resources.gpxanalyzer import GpxAnalyzer
-from resources.hello import HelloWorld
 from resources.map import Map
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
@@ -25,7 +24,6 @@ CORS(app)
 api = Api(app)
 
 # ---RESTful API ---
-# api.add_resource(HelloWorld, "/")
 api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
