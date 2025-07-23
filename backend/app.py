@@ -12,6 +12,8 @@ from resources.hello import HelloWorld
 from resources.trails import Trails, Trail
 from resources.weather import Weather
 from resources.gpxanalyzer import GpxAnalyzer
+from resources.map import Map
+from resources.tiles import Tiles
 
 
 # --- 初始化 Flask 應用 ---
@@ -45,6 +47,8 @@ api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
 api.add_resource(GpxAnalyzer, "/api/gpxanalyzer")
+api.add_resource(Map, "/api/map/coordinates")
+api.add_resource(Tiles, "/api/tiles/download")
 
 
 
