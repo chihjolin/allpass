@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/libs/leaflet/leaflet.css" />
 
     <!-- 解壓後端傳的圖磚壓縮包 -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <!-- 註冊Service Worker -->
     <link rel="manifest" href="/manifest.json">
@@ -98,7 +98,10 @@
     <footer>
         <p>&copy; 2025 登山資訊網. All rights reserved.</p>
     </footer>
-    <script src="script.js"></script>
+    <script src="/libs/leaflet/leaflet.js"></script>
+    <!-- leaflet-gpx -->
+    <script src="/libs/leaflet/gpx.min.js"></script>
+    <script src="script.js" defer></script>
 </body>
 
 </html>

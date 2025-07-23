@@ -516,3 +516,13 @@ h2 {
     display: none;
     /* 最後一個項目沒有連接線 */
 }
+#map_trail {
+    height: 100vh;
+    width: 100%;
+}
+
+
+#map_plan {
+    height: 100vh;
+    width: 100%;
+}
