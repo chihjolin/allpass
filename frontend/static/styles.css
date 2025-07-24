@@ -433,3 +433,96 @@ h2 {
 .segment-distance {
     font-weight: normal;
 }
+
+/* --- 新增 GPX 時間軸樣式 --- */
+.gpx-timeline-display {
+    margin-top: 2rem;
+    font-family: monospace;
+    /* 使用等寬字體更具技術感 */
+}
+
+.timeline-summary {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    margin: 0 auto;
+    position: relative;
+}
+
+.timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+}
+
+.timeline-marker .number {
+    width: 40px;
+    height: 40px;
+    background-color: #333;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.timeline-marker .time-bubble {
+    background-color: #222;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    margin-top: 0.5rem;
+    font-size: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-content {
+    padding-left: 2rem;
+}
+
+.timeline-content .name {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.timeline-content .elevation {
+    color: #777;
+}
+
+.timeline-connector {
+    position: absolute;
+    left: 19px;
+    /* (40px marker width / 2) - 1px line width */
+    top: 60px;
+    /* 從數字下方開始 */
+    bottom: -20px;
+    /* 連接到下一個item的上方 */
+    width: 2px;
+    background-color: #ddd;
+    z-index: 0;
+}
+
+.timeline-item:last-child .timeline-connector {
+    display: none;
+    /* 最後一個項目沒有連接線 */
+}
+#map_trail {
+    height: 100vh;
+    width: 100%;
+}
+
+
+#map_plan {
+    height: 100vh;
+    width: 100%;
+}

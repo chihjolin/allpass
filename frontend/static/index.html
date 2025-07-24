@@ -9,6 +9,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
+<!-- 註冊Service Worker -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#3f51b5">
+<link rel="icon" href="/icons/icon-192.png">
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW 註冊成功', reg.scope))
+        .catch(err => console.log('SW 註冊失敗', err));
+    });
+}
+</script>
+
 <body>
     <header>
         <h1>探索台灣步道</h1>
