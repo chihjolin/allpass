@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgres_db:
+    image: postgis/postgis:16-3.4
+    container_name: allpass_postgres
+    environment:
+      POSTGRES_DB: allpass_db
+      POSTGRES_USER: allpass_user
+      POSTGRES_PASSWORD: allpass # 密碼用什麼好？
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+volumes:
+  postgres_data:
