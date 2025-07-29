@@ -33,4 +33,7 @@ api.add_resource(Tiles, "/api/tiles/download")
 
 # --- 啟動伺服器 ---
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("FLASK_PORT", 5000))
+    host = os.getenv("FLASK_HOST", "0.0.0.0")
+    debug = bool(os.getenv("FLASK_DEBUG", "TRUE"))
+    app.run(host=host, port=port, debug=debug)

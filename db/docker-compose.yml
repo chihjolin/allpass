@@ -2,13 +2,13 @@ version: '3.8'
 services:
   postgis:
     image: postgis/postgis:16-3.4
-    container_name: postgis_container
+    container_name: postgis_test_container
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgis_data:/var/lib/postgresql/data
+      - postgis_test:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
     ports:
       - "${DB_PORT}:5432"
@@ -22,8 +22,8 @@ services:
       retries: 5
 
 volumes:
-  postgis_data:
-    name: my_postgis_data
+  postgis_test:
+    name: my_postgis_test
 
 networks:
   postgres:
