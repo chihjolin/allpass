@@ -22,7 +22,9 @@ async function loadTrailCards() {
     // 假設您有一個後端 API 提供步道列表
     const response = await fetch('/api/trails');
     if (!response.ok) throw new Error('Network response was not ok');
-    const trails = await response.json();
+    //const trails = await response.json();
+    const json = await response.json();
+    const trails = json.trails;
     const grid = document.getElementById('trail-grid');
     if (!grid) return;
     grid.innerHTML = trails.map(trail => `

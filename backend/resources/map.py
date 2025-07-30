@@ -6,7 +6,7 @@ from flask import jsonify
 from flask_restful import Resource
 
 current_path = Path(__file__).resolve()
-json_path = current_path.parents[2] / "frontend" / "data" / "map_cood.json"
+json_path = current_path.parents[0] / "map_cood.json"
 
 
 class Map(Resource):
