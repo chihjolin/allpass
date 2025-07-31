@@ -11,7 +11,7 @@ services:
       - postgis_test:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
     ports:
-      - "${DB_PORT:-25432}:5432"
+      - "${DB_HOST_PORT:-25432}:5432"
     networks:
       - postgres
     restart: unless-stopped
