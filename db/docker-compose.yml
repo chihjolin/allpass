@@ -1,5 +1,15 @@
 version: '3.8'
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis_test_container
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - postgres
+    restart: unless-stopped
   postgis:
     image: postgis/postgis:16-3.4
     container_name: postgis_test_container
@@ -22,6 +32,8 @@ services:
       retries: 5
 
 volumes:
+  redis_data:
+    name: my_redis_test
   postgis_test:
     name: my_postgis_test
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 # 讀取 .env 設定
 load_dotenv(override=True)
+#load_dotenv()
 
 # 組合連線字串
 DB_HOST = os.getenv("DB_HOST")

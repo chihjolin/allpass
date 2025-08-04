@@ -73,6 +73,12 @@ class GpxAnalyzer(Resource):
 
             result = { "summary": summary, "waypoints": timeline_points }
             return jsonify(result)
+        
+            #gpx存入postgres(user_gpx.gpx_uploads/gpx_track_points)
+
+
+            #gpx存入redis
+            
 
         except Exception as e:
             print(f"GPX 解析錯誤: {e}")
