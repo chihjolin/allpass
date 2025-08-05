@@ -82,6 +82,15 @@ CREATE TABLE user_gpx.gpx_track_points (
     recorded_at TIMESTAMPTZ NOT NULL                -- 軌跡點記錄的時間 (帶時區)
 );
 
+-- user_gpx.gpx_test: 儲存 GPX 軌跡中的每一個點的詳細資訊
+CREATE TABLE user_gpx.gpx_test (
+    id BIGSERIAL PRIMARY KEY,                      -- 唯一識別碼
+    trail_id VARCHAR(100) REFERENCES paths.trails(trail_id) ON DELETE CASCADE,                                -- 外鍵，關聯到 paths.trails 表，如果路徑被刪除，相關 POI 也會被刪除                       
+    route GEOMETRY(LineString, 4326),               -- 路徑軌跡
+    location GEOMETRY(PointZ, 4326) NOT NULL,       -- 軌跡點的地理位置 (包含經度、緯度和高程 Z)，使用 WGS84 座標系
+    recorded_at TIMESTAMPTZ NOT NULL                -- 軌跡點記錄的時間 (帶時區)
+);
+
 -------------------------------------
 --- Schema: weather (天氣資料)
 -------------------------------------

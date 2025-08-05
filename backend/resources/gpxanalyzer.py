@@ -16,6 +16,12 @@ class GpxAnalyzer(Resource):
         file = request.files['gpxFile']
         if file.filename == '':
             return jsonify({'message': '沒有選擇檔案'}), 400
+        
+        #解析gpx並將特徵存入postgres(user_gpx.test)
+
+        #特徵同步至redis
+
+        #特徵傳給模型, 模型傳回預測結果
 
         try:
             gpx_content = file.read().decode('utf-8')
@@ -73,12 +79,7 @@ class GpxAnalyzer(Resource):
 
             result = { "summary": summary, "waypoints": timeline_points }
             return jsonify(result)
-        
-            #gpx存入postgres(user_gpx.gpx_uploads/gpx_track_points)
-
-
-            #gpx存入redis
-            
+                
 
         except Exception as e:
             print(f"GPX 解析錯誤: {e}")
