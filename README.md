@@ -1,62 +1,88 @@
 分支 (`feature/database-setup`) 用於建立基礎 PostgreSQL 架構，並包含空間資料處理能力 (PostGIS)，以便處理與登山路線、使用者 GPX 上傳和天氣資料相關的地理資訊。
+使用 Docker 容器化技術，確保每位開發者的資料庫環境都是一致且獨立的，不會相互干擾。
 
-**綱要 (Schema) 組織：** 暫定～～
+## 核心理念
 
-- `paths`: 儲存官方或策展的登山路徑資料。
-- `user_gpx`: 管理使用者上傳的 GPX 軌跡資訊。
-- `weather`: 包含天氣觀測數據，可能與特定的地理位置或興趣點相關聯。
+**「程式碼即環境」**：已將資料庫的配置 (`docker-compose.yml`) 和初始化腳本 (`init.sql`) 納入版本控制。
+只要您的主機裝有 Docker，即可一鍵啟動一個完整且預載了初始資料的資料庫。
 
-## 入門指南 (資料庫設定)
+## 準備工作
 
-要從此分支設定並運行資料庫，請遵循以下步驟：
+在開始之前，請確保您的開發環境已安裝以下工具：
 
-1. **複製專案倉庫切換到功能分支：**git clone 完 cd allpass
-2. **確保 Docker 正在運行：** 確保您的系統上已啟動 Docker Desktop
-3. **審閱資料庫初始化腳本：**
-    
-    位於 `./database/init.sql` 的 `init.sql` 腳本包含所有用於建立綱要、資料表、索引和觸發器的 SQL 命令。當 `postgis/postgis` 容器首次啟動時，此腳本會透過 `docker-compose.yml` 中的 `volumes: - ./db:/docker-entrypoint-initdb.d` 映射自動執行。
-    
-4. **設定資料庫密碼 ：**
-    
-    開啟 `docker-compose.yml`。為了安全考量，強烈建議將 `POSTGRES_PASSWORD` 從 `allpass` 更改為一個強大且獨特的密碼。
-    
-    ```yaml
-    # ...
-    
-    environment:
-    
-      POSTGRES_DB: allpass_db
-    
-      POSTGRES_USER: allpass_user
-    
-      POSTGRES_PASSWORD: 您的_強密碼_在此處 # <--- 請務必更改！
-    
-    # ...
-    
-    ```
-    
-5. **啟動資料庫容器：**
-    
-    在終端機中，導航到已複製的倉庫根目錄 (即 `docker-compose.yml` 所在的位置)，
-    然後執行：
-    
-    ```bash
-    docker-compose up -d
-    ```
-    
-    此命令將會：
-    
-    - 如果本機沒有 `postgis/postgis:16-3.4` Docker 映像檔，則會下載它。
-    - 建立並啟動一個名為 `allpass_postgres` 的容器。
-    - 將容器的 `5432` 埠映射到您的主機。
-    - 將 `./db` 目錄 (包含 `init.sql`) 掛載到容器的初始化目錄中，使得 `init.sql` 在首次啟動時運行。
-    - 將資料庫數據持久化到名為 `postgres_data` 的 Docker Volume 中。
-6. **驗證容器狀態：**
-    
-    您可以使用 Docker Desktop 或執行以下命令來檢查容器狀態和埠映射：
-    
-    ```bash
-    docker ps
-    ```
-    
-    您應該會看到 `allpass_postgres` 容器的 `PORTS` 欄位顯示類似 `0.0.0.0:5432->5432/tcp` 的資訊。
+1.  **Git:** 用於複製專案程式碼。
+2.  **Docker Desktop:** 用於執行資料庫容器。
+3.  **DBeaver:** 一款強大的資料庫管理工具，方便您視覺化瀏覽與查詢資料。
+
+## 步驟一：取得專案程式碼
+
+首先，請透過 Git 複製專案，並切換到您要開發的分支。
+
+```bash
+# 複製專案倉庫
+git clone [https://github.com/chihjolin/allpass.git](https://github.com/chihjolin/allpass.git)
+
+# 進入專案目錄
+cd allpass
+
+# 切換到指定分支
+git checkout feature/database-setup
+```
+
+## 步驟二：啟動本地資料庫
+進入專案的根目錄後，只需一條命令即可啟動所有必要的服務。
+
+```bash
+# 啟動 PostgreSQL 容器，並在背景運行
+docker-compose up -d
+```
+
+執行此命令後，Docker 將會：<br>
+-自動下載 postgis/postgis:16-3.4 映像檔。<br>
+-建立一個名為 allpass_postgres 的容器。<br>
+-將容器的 5432 埠映射到您主機的 5423 埠。<br>
+-自動執行 ./db/init.sql 腳本，建立所有資料表、索引，並載入初始資料。<br>
+
+## 步驟三：驗證服務狀態
+您可以使用以下命令確認容器是否已成功啟動。
+
+```bash
+docker ps
+```
+如果一切正常，您將在輸出中看到 allpass_postgres 容器，其 PORTS 欄位應顯示 0.0.0.0:5423->5432/tcp。
+
+
+## 步驟四：連接資料庫並開始開發
+現在，可以使用 DBeaver 或任何支援 PostgreSQL 的工具來連接資料庫。
+
+```bash
+連線設定：
+主機 (Host): localhost
+埠號 (Port): 5423
+資料庫 (Database): allpass_db
+使用者名稱 (Username): allpass_user
+密碼 (Password): allpass (或您在 docker-compose.yml 中設定的密碼)
+```
+
+連線成功後，您就可以在 DBeaver 的「Database Navigator」中看到 paths、user_gpx、weather 等 Schema，並開始您的開發工作。
+
+常見問題排解<br>
+Q: 啟動時顯示「Port 5423 is already in use」？
+
+A: 這表示您主機的 5423 埠已被其他程式佔用。您可以選擇：
+
+停止佔用該埠的程式。
+
+編輯 docker-compose.yml 檔案，將 ports 的主機埠號改為其他未使用的埠，例如 "5424:5432"，然後重新執行 docker-compose up -d。
+
+Q: 重新啟動後資料庫是空的？
+
+A: 這通常發生在您手動刪除了容器但未刪除資料 Volume。要強制 Docker 重新執行初始化腳本，請使用以下命令：
+
+```bash
+# 停止並刪除容器和 Volume (此操作會清除所有資料，請謹慎！)
+docker-compose down -v
+
+# 重新啟動
+docker-compose up -d
+```
