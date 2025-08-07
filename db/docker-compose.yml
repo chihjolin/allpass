@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: postgis_test_container
+    environment:
+      POSTGRES_DB: ${DB_NAME:-allpass_test}
+      POSTGRES_USER: ${DB_USER:-zoe}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-aipe-tester}
+    volumes:
+      - postgis_test:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_HOST_PORT:-25432}:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zoe} -d ${DB_NAME:-allpass_test}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgis_test:
+    name: my_postgis_test
+
+networks:
+  postgres:
+    external: True
