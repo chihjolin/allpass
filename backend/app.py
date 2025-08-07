@@ -31,6 +31,21 @@ api.add_resource(GpxAnalyzer, "/api/gpxanalyzer")
 api.add_resource(Map, "/api/map/coordinates")
 api.add_resource(Tiles, "/api/tiles/download")
 
+# 測試一下回傳geojson 前端地圖用
+@app.route("/api/trail/<string:id>/route")
+def test(id):
+    with open("test.geojson", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return jsonify(data)
+@app.route("/api/time", methods=['POST'])
+def time():
+    data = request.get_json()
+    print(data)
+    return jsonify({
+        "message": "成功接收時間",
+        "received_timestamp": data.get("timestamp")
+    }), 200
+
 # --- 啟動伺服器 ---
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))

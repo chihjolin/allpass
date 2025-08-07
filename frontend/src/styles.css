@@ -1,3 +1,115 @@
+/* --- PlanPage 專用樣式 --- */
+.plan-header {
+    border-bottom: 1px solid #e0e0e0;
+    background: #00796b;
+    color: #222;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 0.5rem;
+}
+
+.plan-back-link {
+    color: #00796b;
+}
+
+.plan-title {
+    font-size: 2rem;
+    margin: 0;
+    color: #FFFFFF;
+}
+
+.plan-flex-layout {
+    display: flex;
+    height: calc(100vh - 64px);
+    min-height: 0;
+}
+
+.plan-sidebar {
+    width: 260px;
+    min-width: 200px;
+    max-width: 320px;
+    background: #f8f9fa;
+    border-right: 1px solid #e0e0e0;
+    box-sizing: border-box;
+    padding: 1.2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    z-index: 1;
+}
+
+.plan-sidebar-title {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0;
+    color: #00796b;
+    border: none;
+    padding: 0;
+    letter-spacing: 1px;
+}
+
+.plan-gpx-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+
+.plan-gpx-input {
+    font-size: 0.95rem;
+    border-radius: 16px;
+    padding: 0.4rem 1rem;
+    background: #000000;
+}
+
+.plan-gpx-btn {
+    font-size: 0.95rem;
+    border-radius: 16px;
+    padding: 0.4rem 1rem;
+    background: #000000;
+}
+
+.plan-timeline-display {
+    flex: 1;
+    min-height: 100px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.5rem;
+    overflow: auto;
+    font-size: 0.92rem;
+    margin-top: 0.5rem;
+}
+
+.plan-map-area {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: #e9ecef;
+    position: relative;
+}
+
+#map_plan {
+    height: 100%;
+    width: 100%;
+}
+
+.plan-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #e0e0e0;
+    z-index: 10;
+}
+
+.plan-footer p {
+    margin: 0;
+    padding: 0.7rem 0;
+    font-size: 0.95rem;
+    color: #888;
+}
+
 /* 全域與基本樣式 */
 :root {
     --primary-color: #00796b;
@@ -516,11 +628,26 @@ h2 {
     display: none;
     /* 最後一個項目沒有連接線 */
 }
+
+/* 地圖區段樣式 */
+.map-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.map-section h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
 #map_trail {
     height: 100vh;
     width: 100%;
 }
-
 
 #map_plan {
     height: 100vh;
