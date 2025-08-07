@@ -26,6 +26,7 @@ CREATE TABLE paths.trails (
     estimated_duration_h NUMERIC(5, 2),             -- 估計完成時間 (小時)，保留兩位小數
     weather_station VARCHAR(100),                    --氣象站位置
     route_geometry GEOMETRY(LineString, 4326),      -- 路徑的地理幾何形狀，使用 LineString 類型和 WGS84 座標系 (EPSG:4326)
+    communication_points GEOMETRY(MultiPoint, 4326),
     created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間，預設為當前時間帶時區
     updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間，預設為當前時間帶時區
 );
@@ -149,7 +150,7 @@ EXECUTE FUNCTION update_timestamp_column();
 
 -- 插入範例資料paths.trails
 INSERT INTO paths.trails (trail_id, name, baiyue_peak_name, location, difficulty, permit_required, length_km, elevation_gain_m, descent_m, estimated_duration_h, weather_station) VALUES
-('hehuan-main','合歡主峰', '合歡山','南投縣仁愛鄉', 1, false, 3.6, 150, 150, 1.5, '仁愛鄉'),
+('hehuan-main','合歡南峰', '合歡山','南投縣仁愛鄉', 1, false, 3.6, 150, 150, 1.5, '仁愛鄉'),
 ('hehuan-north','合歡北峰', '合歡山','南投縣仁愛鄉', 3, false, 4.7, 450, 450, 4, '仁愛鄉'),
 ('yangmingshan-east','陽明山東段縱走', '陽明山','臺北市士林區', 5, false, 12, 800, 750, 6, '士林區'),
 ('taoshan-waterfall','桃山瀑布', '桃山','臺中市和平區', 2, true, 8.6, 400, 400, 3, '和平區'),

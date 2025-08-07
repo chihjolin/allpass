@@ -17,11 +17,9 @@ class GpxAnalyzer(Resource):
         if file.filename == '':
             return jsonify({'message': '沒有選擇檔案'}), 400
         
+        #使用者完成登山後上傳完整的gpx, 作為新的訓練資料來源
         #解析gpx並將特徵存入postgres(user_gpx.test)
 
-        #特徵同步至redis
-
-        #特徵傳給模型, 模型傳回預測結果
 
         try:
             gpx_content = file.read().decode('utf-8')
