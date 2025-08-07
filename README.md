@@ -1,71 +1,31 @@
 ## 專案結構  
 ```
-allpass
-├── backend
-│   ├── Dockerfile
-│   ├── app.py
-│   ├── requirements.txt
-│   ├── resources
-│   │   ├── gpxanalyzer.py
-│   │   ├── hello.py
-│   │   ├── map.py
-│   │   ├── tiles.py
-│   │   ├── trails.py
-│   │   └── weather.py
-│   └── utils
-│       └── sql.py
-├── db
-│   ├── Dockerfile
-│   └── database.json
-├── docker-compose.yml
-├── frontend
-│   ├── Dockerfile
-│   ├── data
-│   │   └── map_cood.json
-│   └── static
-│       ├── icons
-│       ├── index.html
-│       ├── libs
-│       │   └── leaflet
-│       ├── manifest.json
-│       ├── plan.html
-│       ├── script.js
-│       ├── styles.css
-│       ├── sw.js
-│
-└── README.md
+frontend/
+├── node_modules/               # 第三方依賴模組
+├── public/                     # 公開資源 (如 favicon、manifest 等)
+├── src/                       
+│   ├── components/             # React 組件
+│   ├── pages/                  # 不同頁面元件（搭配路由）
+│   ├── App.jsx                 # React 主組件
+│   ├── main.jsx                # 應用程式的進入點
+│   └── styles.css              
+├── Dockerfile                  
+├── index.html                  # HTML 模板入口
+├── nginx.conf                  # Nginx 設定檔
+├── package-lock.json           # npm 鎖定依賴版本
+├── package.json                # 專案描述與依賴清單
+└── vite.config.js              # Vite 設定
+
+
 ```
 ## 使用說明    
-### 本地安裝nginx+ 修改設定檔-nginx.conf(範例)  
+### 進入前端開發伺服器
+- 下載node js  
 ```
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-
-    root /pathtoproject/allpass/frontend/static;
-    index index.html;
-
-    server_name _;
-    
-    location /api/ {
-	    proxy_pass http://localhost:5000/api/;
-	    proxy_set_header Host $host;
-	    proxy_set_header X-Real-IP $remote_addr;
-	    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-	    proxy_set_header X-Forwarded-Proto $scheme;
-	    }
-
-    location / {
-        try_files $uri /index.html;
-        #try_files $uri $uri/ =404;
-    }
-    }
+cd frontend
+npm install
+npm run dev
 ```
-### 專案環境變數  
-### /backend/.env(範例)  
-```
-#中央氣象局API
-CWA_API_KEY=123
-CWA_API_BASE=base_url
-WEATHER_ENDPOINT=endpoint
-```
+localhost:5173
+### 或者用Docker
+用docker的話每次React有修改都要重built映像檔喔
