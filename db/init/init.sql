@@ -26,7 +26,6 @@ CREATE TABLE paths.trails (
     estimated_duration_h NUMERIC(5, 2),             -- 估計完成時間 (小時)，保留兩位小數
     weather_station VARCHAR(100),                    --氣象站位置
     route_geometry GEOMETRY(LineString, 4326),      -- 路徑的地理幾何形狀，使用 LineString 類型和 WGS84 座標系 (EPSG:4326)
-    communication_points GEOMETRY(MultiPoint, 4326),
     created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間，預設為當前時間帶時區
     updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間，預設為當前時間帶時區
 );
