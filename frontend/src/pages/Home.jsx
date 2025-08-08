@@ -24,6 +24,22 @@ export default function Home() {
     fetchTrails();
   }, []);
 
+  // 處理步道卡片點擊
+  const handleTrailClick = (trail) => {
+    // 將選擇的步道資料存儲到 localStorage
+    localStorage.setItem('selectedTrail', JSON.stringify({
+      id: trail.id,
+      name: trail.name,
+      location: trail.location,
+      difficulty: trail.difficulty,
+      permitRequired: trail.permitRequired,
+      selectedAt: new Date().toISOString()
+    }));
+    
+    // 導航到步道詳細頁面
+    navigate(`/trail/${trail.id}`);
+  };
+
   if (error) {
     return <p>無法載入步道列表：{error}</p>;
   }
@@ -40,7 +56,7 @@ export default function Home() {
             <TrailCard
               key={trail.id}
               trail={trail}
-              onClick={() => navigate(`/plan/${trail.id}`)}
+              onClick={() => handleTrailClick(trail)}
             />
           ))}
         </div>

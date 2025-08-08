@@ -27,12 +27,7 @@ api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
 api.add_resource(Tiles, "/api/tiles/download")
 
-# 測試一下回傳geojson 前端地圖用
-@app.route("/api/trail/<string:id>/route")
-def test(id):
-    with open("test.geojson", "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return jsonify(data)
+# 測試一下
 @app.route("/api/time", methods=['POST'])
 def time():
     data = request.get_json()
