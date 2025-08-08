@@ -52,14 +52,6 @@ export default function TimelineDisplay({ timelineData }) {
 
     return (
         <div className="timeline-container">
-            {/* 如果還未預測，顯示提示 */}
-            {!timelineData.predicted && (
-                <div className="timeline-hint">
-                    <i className="fa-solid fa-info-circle"></i>
-                    <span>點擊「預測時間」取得精確時間預測</span>
-                </div>
-            )}
-
             {timeline.map((point, index) => (
                 <div key={point.id} className="timeline-item">
                     {/* 時間點圓圈 */}

@@ -5,24 +5,6 @@
     overflow-y: auto;
 }
 
-/* 提示區域 */
-.timeline-hint {
-    background-color: #e3f2fd;
-    border-left: 4px solid #2196f3;
-    padding: 0.8rem 1rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: #1976d2;
-}
-
-.timeline-hint i {
-    color: #2196f3;
-}
-
 /* 未預測狀態樣式 */
 .timeline-circle.unpredicted {
     background-color: #95a5a6;
