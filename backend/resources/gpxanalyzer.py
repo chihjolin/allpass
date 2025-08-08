@@ -16,6 +16,10 @@ class GpxAnalyzer(Resource):
         file = request.files['gpxFile']
         if file.filename == '':
             return jsonify({'message': '沒有選擇檔案'}), 400
+        
+        #使用者完成登山後上傳完整的gpx, 作為新的訓練資料來源
+        #解析gpx並將特徵存入postgres(user_gpx.test)
+
 
         try:
             gpx_content = file.read().decode('utf-8')
@@ -73,6 +77,7 @@ class GpxAnalyzer(Resource):
 
             result = { "summary": summary, "waypoints": timeline_points }
             return jsonify(result)
+                
 
         except Exception as e:
             print(f"GPX 解析錯誤: {e}")

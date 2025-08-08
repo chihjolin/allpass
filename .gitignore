@@ -7,4 +7,3 @@ kernel/
 *.pem
 *bkp*
 *test*
-node_modules/
