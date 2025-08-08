@@ -7,5 +7,5 @@ kernel/
 *.crt
 *.pem
 *bkp*
-*test*
+#*test*
 node_modules

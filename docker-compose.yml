@@ -47,18 +47,18 @@ services:
       postgis:
         condition: service_healthy
 
-  frontend:
-    build: ./frontend
-    container_name: allpass_frontend_container
-    restart: always
-    env_file:
-      - ./.env
-    ports:
-      - "${WEB_PORT:-80}:80"
-    networks:
-      - allpass
-    depends_on:
-      - backend
+  # frontend:
+  #   build: ./frontend
+  #   container_name: allpass_frontend_container
+  #   restart: always
+  #   env_file:
+  #     - ./.env
+  #   ports:
+  #     - "${WEB_PORT:-80}:80"
+  #   networks:
+  #     - allpass
+  #   depends_on:
+  #     - backend
 
 volumes:
   postgis_data:
