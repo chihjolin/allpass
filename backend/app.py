@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restful import Api, Resource
-from resources.gpxanalyzer import GpxAnalyzer
-from resources.map import Map
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
 from resources.weather import Weather
@@ -27,16 +25,9 @@ api = Api(app)
 api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
-api.add_resource(GpxAnalyzer, "/api/gpxanalyzer")
-api.add_resource(Map, "/api/map/coordinates")
 api.add_resource(Tiles, "/api/tiles/download")
 
-# 測試一下回傳geojson 前端地圖用
-@app.route("/api/trail/<string:id>/route")
-def test(id):
-    with open("test.geojson", "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return jsonify(data)
+# 測試一下
 @app.route("/api/time", methods=['POST'])
 def time():
     data = request.get_json()

@@ -1,106 +1,134 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import LeafletMap from '../components/LeafletMap';
-
+import MapWithTrail from '../components/MapWithTrail';
 import PredictBtn from '../components/PredictBtn';
+import TimelineDisplay from '../components/TimelineDisplay';
 
 // PlanPage 組件：提供 GPX 檔案上傳與地圖展示功能
 export default function PlanPage() {
   const { id } = useParams(); // 取得步道 id，方便返回詳情頁
-  const mapRef = useRef(null); // 地圖實例引用
-  const [routeGeoJson, setRouteGeoJson] = useState(null); // 標準路線
-  const [waypoints, setWaypoints] = useState([]); // 通訊點座標
-  const [selectedGPX, setSelectedGPX] = useState(null);
+  const [selectedTrail, setSelectedTrail] = useState(null); // 從 localStorage 取得的選擇步道
+  const [trailName, setTrailName] = useState('路線規劃與分析');
+  const [timelineData, setTimelineData] = useState(null); // 時間軸資料
+  const [mapInitialized, setMapInitialized] = useState(false); // 記錄地圖是否已初始化
 
-  // 地圖初始化回調
-  const handleMapReady = (map) => {
-    mapRef.current = map;
-  };
-
-  // 監聽 routeGeoJson/waypoints 變化，渲染到地圖
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !window.L) return;
-    // 清理舊圖層
-    if (map._routeLayer) {
-      map.removeLayer(map._routeLayer);
-      map._routeLayer = null;
+    // 從 localStorage 取得選擇的步道資料
+    const storedTrail = localStorage.getItem('selectedTrail');
+    if (storedTrail) {
+      try {
+        const parsedTrail = JSON.parse(storedTrail);
+        setSelectedTrail(parsedTrail);
+        setTrailName(`${parsedTrail.name} - 路線規劃與分析`);
+      } catch (err) {
+        console.error('解析儲存的步道資料失敗:', err);
+      }
     }
-    if (map._waypointLayers) {
-      map._waypointLayers.forEach(marker => map.removeLayer(marker));
-      map._waypointLayers = null;
-    }
-    // 加入新路線
-    if (routeGeoJson) {
-      const coords = routeGeoJson.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-      map._routeLayer = window.L.polyline(coords, { color: '#00796b', weight: 5 }).addTo(map);
-    }
-    // 加入新通訊點
-    if (waypoints && waypoints.length > 0) {
-      map._waypointLayers = waypoints.map(pt => {
-        const [lng, lat] = pt.geometry.coordinates;
-        return window.L.marker([lat, lng], {
-          title: pt.properties.label
-        }).addTo(map).bindPopup(pt.properties.label);
-      });
-    }
-  }, [routeGeoJson, waypoints]);
+  }, []);
 
-  // GPX 加載完成回調
-  const handleGPXLoaded = (gpxLayer) => {
-    console.log('GPX loaded successfully', gpxLayer);
-  };
-
-  // 取得後端 API 路線與通訊點
+  // 在頁面載入時生成初始時間軸
   useEffect(() => {
-    async function fetchRoute() {
-      const res = await fetch(`/api/trail/${id}/route`);
-      const data = await res.json();
-      // 取出 LineString 作為 route，Point 作為 waypoints
-      const route = data.features?.find(f => f.geometry.type === 'LineString');
-      const points = data.features?.filter(f => f.geometry.type === 'Point') || [];
-      setRouteGeoJson(route);
-      setWaypoints(points);
+    if (id) {
+      generateInitialTimeline(id);
     }
-    fetchRoute();
   }, [id]);
 
+  // 生成初始時間軸（不含精確時間預測）
+  const generateInitialTimeline = (trailId) => {
+    try {
+      // 從 localStorage 獲取步道資料
+      const storedTrailData = localStorage.getItem(`trailData_${trailId}`);
+
+      if (!storedTrailData) {
+        // 如果沒有資料，設置一個等待狀態
+        setTimelineData({
+          loading: true,
+          message: '載入步道資料中...'
+        });
+        return;
+      }
+
+      const trailData = JSON.parse(storedTrailData);
+      const pointFeatures = trailData.features?.filter(f => f.geometry.type === 'Point') || [];
+
+      if (pointFeatures.length === 0) {
+        setTimelineData({
+          error: true,
+          message: '此步道沒有標記點資料'
+        });
+        return;
+      }
+
+      // 生成基本時間軸（顯示地點，但時間顯示為 "--:--"）
+      const timeline = pointFeatures.map((point, index) => ({
+        id: index + 1,
+        name: point.properties.name || `標記點 ${index + 1}`,
+        time: '--:--', // 初始狀態顯示為 "--:--"
+        elevation: Math.floor(Math.random() * 500 + 100),
+        distanceFromPrev: index > 0 ? Math.round((1.5 + Math.random() * 1.5) * 10) / 10 : 0,
+        timeFromPrev: 0, // 初始狀態不顯示時間
+        type: index === 0 ? 'start' : (index === pointFeatures.length - 1 ? 'end' : 'waypoint'),
+        originalPoint: point,
+        predicted: false // 標記為未預測狀態
+      }));
+
+      setTimelineData({
+        success: true,
+        startTime: '--:--',
+        timeline: timeline,
+        trailId: trailId,
+        predicted: false // 整體標記為未預測狀態
+      });
+
+    } catch (err) {
+      console.error('生成初始時間軸失敗:', err);
+      setTimelineData({
+        error: true,
+        message: '載入時間軸失敗',
+        details: err.message
+      });
+    }
+  };
 
   // 處理 PredictBtn 回傳
-  function handleGPXResult(result) {
-    const display = document.getElementById('gpx-timeline-display');
-    if (result?.error) {
-      display.innerHTML = '<p style="color:red;">分析失敗。</p>';
-    } else {
-      display.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+  function handleTimelineResult(result) {
+    setTimelineData(result);
+  }
+
+  // 處理地圖初始化完成
+  function handleMapInitialized() {
+    if (!mapInitialized) {
+      setMapInitialized(true);
     }
   }
 
   return (
     <>
       <header className="trail-header plan-header">
-        <Link to={`/trail/${id}`} className="back-link plan-back-link"><i className="fa-solid fa-arrow-left"></i> 返回詳情</Link>
-        <h1 id="plan-trail-name" className="plan-title">路線規劃與分析</h1>
+        <Link to={`/trail/${id}`} className="back-link plan-back-link">
+          <i className="fa-solid fa-arrow-left"></i> 返回詳情
+        </Link>
+        <h1 id="plan-trail-name" className="plan-title">{trailName}</h1>
       </header>
       <div className="plan-flex-layout">
         {/* Sidebar: GPX 時間軸分析 */}
         <aside className="plan-sidebar">
           <h2 className="plan-sidebar-title">GPX 時間軸分析</h2>
           <div className="plan-gpx-upload">
-            <PredictBtn onResult={handleGPXResult} />
+            <PredictBtn onResult={handleTimelineResult} trailId={id} currentTimelineData={timelineData} />
           </div>
-          <div id="gpx-timeline-display" className="gpx-timeline-display plan-timeline-display"></div>
+          <div className="gpx-timeline-display plan-timeline-display">
+            <TimelineDisplay timelineData={timelineData} />
+          </div>
         </aside>
         {/* Main map area */}
         <div className="plan-map-area">
-          <LeafletMap
-            id="map_plan"
-            center={[24.39700, 121.30770]}
-            zoom={14}
+          <MapWithTrail
+            trailId={id}
             style={{ height: '100%', width: '100%', borderRadius: 0, boxShadow: 'none' }}
-            enableGPX={false}
-            onMapReady={handleMapReady}
-            onGPXLoaded={handleGPXLoaded}
+            shouldAutoZoom={!mapInitialized}
+            onMapReady={handleMapInitialized}
           />
         </div>
       </div>

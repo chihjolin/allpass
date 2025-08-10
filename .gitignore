@@ -8,4 +8,4 @@ kernel/
 *.pem
 *bkp*
 *test*
-node_modules/
+node_modules

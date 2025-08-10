@@ -19,9 +19,6 @@ class GpxAnalyzer(Resource):
         if file.filename == "":
             return jsonify({"message": "沒有選擇檔案"}), 400
 
-        # 使用者完成登山後上傳完整的gpx, 作為新的訓練資料來源
-        # 解析gpx並將特徵存入postgres(user_gpx.test)
-
         try:
             gpx_content = file.read().decode("utf-8")
             gpx = gpxpy.parse(gpx_content)
@@ -117,6 +114,12 @@ class GpxAnalyzer(Resource):
 
             result = {"summary": summary, "waypoints": timeline_points}
             return jsonify(result)
+
+            # 時間點, (解析後的)路徑gpx存入postgres, redis(user_gpx.gpx_uploads/gpx_track_points)
+
+            # 從redis拉取特徵
+
+            # 特徵傳給模型並由模型返回預測結果
 
         except Exception as e:
             print(f"GPX 解析錯誤: {e}")
