@@ -2,7 +2,8 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
-from flask_restful import Api, Resource
+from flask_restful import Api
+from resources.health import Health
 from resources.predictions import Predictions
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
@@ -13,7 +14,9 @@ app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
+
 # --- 註冊API ---
+api.add_resource(Health, "/health") #健康檢查路由
 api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
@@ -37,9 +40,8 @@ api.add_resource(Predictions, "/api/time")
 
 # --- 啟動伺服器 ---
 if __name__ == "__main__":
+    # app.run(host="0.0.0.0", port=5000, debug=True)
     port = int(os.getenv("FLASK_PORT", 5000))
     host = os.getenv("FLASK_HOST", "0.0.0.0")
-    debug = bool(os.getenv("FLASK_DEBUG", "TRUE"))
-    app.run(host=host, port=port, debug=debug)
     debug = bool(os.getenv("FLASK_DEBUG", "TRUE"))
     app.run(host=host, port=port, debug=debug)
