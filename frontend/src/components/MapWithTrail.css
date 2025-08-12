@@ -1,0 +1,47 @@
+/* MapWithTrail.css: 用於美化 MapWithTrail 組件的樣式 */
+
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-control-layers {
+    background-image: none;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.leaflet-control-layers-list {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: none;
+}
+
+.leaflet-control-layers label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1px;
+}
+
+.leaflet-control-layers input[type="radio"] {
+    display: none;
+    margin-right: 8px;
+}
+
+.leaflet-control-layers-separator {
+    border-top: none;
+    margin: 8px 0;
+}
+
+.leaflet-control-layers label:hover {
+    background-color: #30333328;
+    color: white;
+}
