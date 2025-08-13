@@ -2,8 +2,6 @@ import json
 import os
 
 import certifi
-
-# from utils.db import get_db_data
 import requests as req
 from flask import jsonify
 from flask_restful import Resource
@@ -32,7 +30,7 @@ class Weather(Resource):
                     "WeatherElement"
                 ]
             except:
-                return jsonify({"message": "氣象局回傳資料格式異常"}), 500
+                return {"message": "氣象局回傳資料格式異常"}, 500
             temp_el = next(
                 (
                     item
@@ -58,7 +56,7 @@ class Weather(Resource):
                 None,
             )
             if not all([temp_el, pop_el, wx_el]):
-                return jsonify({"message": "天氣資料欄位不完整"}), 500
+                return {"message": "天氣資料欄位不完整"}, 500
             hourly_temp, hourly_pop, hourly_wx = (
                 temp_el["Time"],
                 pop_el["Time"],
@@ -99,8 +97,9 @@ class Weather(Resource):
                         #'wxCode': wx_entry['ElementValue'][1]['value'] if wx_entry else 'N/A'
                     }
                 )
-            return jsonify(formatted_weather)
+            return formatted_weather, 200
         except req.exceptions.RequestException as e:
-            return jsonify({"message": "無法從氣象局獲取天氣資訊"}), 502
+            return {"message": "無法從氣象局獲取天氣資訊"}, 502
         except (KeyError, IndexError) as e:
-            return jsonify({"message": "解析氣象局資料時發生錯誤"}), 500
+            return {"message": "解析氣象局資料時發生錯誤"}, 500
+            return {"message": "解析氣象局資料時發生錯誤"}, 500

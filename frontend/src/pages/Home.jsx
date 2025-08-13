@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import TrailCard from '../components/TrailCard';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 // Home 組件：負責載入並顯示所有步道卡片
 export default function Home() {
@@ -35,7 +36,7 @@ export default function Home() {
       permitRequired: trail.permitRequired,
       selectedAt: new Date().toISOString()
     }));
-    
+
     // 導航到步道詳細頁面
     navigate(`/trail/${trail.id}`);
   };
@@ -46,10 +47,17 @@ export default function Home() {
 
   return (
     <>
-      <header>
-        <h1>探索台灣步道</h1>
-        <p>選擇一條步道，開始您的旅程</p>
-      </header>
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 3 }}
+        className="home-header"
+      >
+        <div className='home-header-text'>
+          <h1>All 爬ss</h1>
+          <p>探索台灣步道</p>
+        </div>
+      </motion.header>
       <main>
         <div className="trail-grid">
           {trails.map(trail => (

@@ -3,24 +3,24 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
-# 讀取 .env 設定
-load_dotenv(override=True)
-#load_dotenv()
+# # 讀取 .env 設定(僅開發測試用)
+# load_dotenv(override=True)
+
 
 # 組合連線字串
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
 
-DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-print("DB_URL:", DATABASE_URL)
+POSTGRES_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+print("POSTGRES_URL:", POSTGRES_URL)
 
 
 # 建立 Engine 和 Session
-engine = create_engine(DATABASE_URL, echo=False, future=True)
+engine = create_engine(POSTGRES_URL, echo=False, future=True)
 
 # 可多執行緒使用的 ScopedSession
 SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))
