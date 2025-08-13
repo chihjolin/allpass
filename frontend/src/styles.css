@@ -546,6 +546,8 @@ h2 {
     font-weight: normal;
 }
 
+<<<<<<<< HEAD:frontend/public/styles.css
+========
 /* --- 新增 GPX 時間軸樣式 --- */
 .gpx-timeline-display {
     margin-top: 2rem;
@@ -643,12 +645,17 @@ h2 {
     margin-bottom: 1rem;
     color: var(--primary-color);
 }
+>>>>>>>> 542496a9366f16e2fd1312453748e1761e8bbd6f:frontend/src/styles.css
 
 #map_trail {
     height: 100vh;
     width: 100%;
 }
 
+<<<<<<<< HEAD:frontend/public/styles.css
+
+========
+>>>>>>>> 542496a9366f16e2fd1312453748e1761e8bbd6f:frontend/src/styles.css
 #map_plan {
     height: 100vh;
     width: 100%;

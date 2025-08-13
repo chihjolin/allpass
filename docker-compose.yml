@@ -1,69 +1,84 @@
 version: '3.8'
 
 services:
+  #Redis 快取服務
+  redis:
+    image: redis:7-alpine
+    container_name: allpass_redis_container
+    env_file:
+      - ./.env
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:${REDIS_PORT:-6379}"
+    networks:
+      - allpass-network
+    restart: unless-stopped
+
+  #Postgres(postgis) 服務
   postgis:
     image: postgis/postgis:16-3.4
     container_name: allpass_postgis_container
     env_file:
       - ./.env
-    environment:
-      POSTGRES_DB: ${DB_NAME:-allpass_db}
-      POSTGRES_USER: ${DB_USER:-allpass_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-allpass}
     volumes:
       - postgis_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
     ports:
-      - "${DB_HOST_PORT:-15432}:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:${POSTGRES_PORT:-5432}"
     networks:
-      - allpass
+      - allpass-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-allpass_user} -d ${DB_NAME:-allpass_db}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-allpass_user} -d ${POSTGRES_DB:-allpass_db}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  #Backend 服務
   backend:
     build: ./backend
     container_name: allpass_backend_container
-    restart: always
     env_file:
       - ./.env
-    environment:
-      FLASK_HOST: ${FLASK_HOST:-0.0.0.0}
-      FLASK_PORT: ${FLASK_PORT:-5000}
-      FLASK_DEBUG: ${FLASK_DEBUG:-True}
-      POSTGRES_HOST: ${DB_HOST:-postgis}
-      POSTGRES_PORT: ${DB_PORT:-5432}
-      POSTGRES_DB: ${DB_NAME:-allpass_db}
-      POSTGRES_USER: ${DB_USER:-allpass_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-allpass}
     ports:
-      - "${FLASK_PORT:-5000}:5000"
+      - "${FLASK_HOST_PORT:-5000}:${FLASK_PORT:-5000}"
     networks:
-      - allpass
+      - allpass-network
     depends_on:
       postgis:
         condition: service_healthy
-  # frontend:
-  #   build: ./frontend
-  #   container_name: allpass_frontend_container
-  #   restart: always
-  #   env_file:
-  #     - ./.env
-  #   ports:
-  #     - "${WEB_PORT:-80}:80"
-  #   networks:
-  #     - allpass
-  #   depends_on:
-  #     - backend
+      redis:
+        condition: service_started
+
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  #Frontend 服務
+  frontend:
+    build: ./frontend
+    container_name: allpass_frontend_container
+    env_file:
+      - ./.env
+    ports:
+      - "${WEB_HOST_PORT:-80}:${WEB_PORT:-80}"
+    networks:
+      - allpass-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgis_data:
-    name: my_postgis_data
+    name: allpass_postgis_data
+  redis_data:
+    name: allpass_redis_data
 
 networks:
-  allpass:
-    #external: True
+  allpass-network:
     driver: bridge

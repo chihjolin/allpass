@@ -1,11 +1,11 @@
 .venv/
 __pycache__/
 *.pyc
-.env
+#.env
 **/.DS_Store
 kernel/
 *.crt
 *.pem
 *bkp*
-*test*
+#*test*
 node_modules

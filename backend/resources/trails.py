@@ -1,4 +1,3 @@
-from flask import jsonify
 from flask_restful import Resource
 from geoalchemy2.shape import to_shape
 from models import POIModel, TrailModel
@@ -35,6 +34,7 @@ class Trails(Resource):
                         }
                     )
             return {"trails": result}, 200
+            # return jsonify({"trails": result}), 200
         except Exception as e:
             return {"message": "伺服器錯誤", "error": str(e)}, 500
 
@@ -94,41 +94,3 @@ class Trail(Resource):
             return feature_collection, 200
         except Exception as e:
             return {"message": "伺服器錯誤", "error": str(e)}, 500
-
-
-# class Trailgeo(Resource):
-#     def get(self, id):
-#         """
-#         以GEOJSON格式傳回特定id的官方路徑地理資料（路線+各通訊點）
-#         """
-#         features = []
-#         try:
-#             with SessionLocal() as session:
-#                 trail = session.query(TrailModel).filter_by(trail_id=id).first()
-#                 # 轉換成GeoJSON
-#                 trail_linestring_geom = (
-#                     mapping(to_shape(trail.route_geometry)) if trail else None
-#                 )
-#                 features.append(
-#                     {
-#                         "type": "Feature",
-#                         "geometry": trail_linestring_geom,
-#                         "properties": {"type": "route", "id": trail.trail_id},
-#                     }
-#                 )
-#                 point_records = session.query(POIModel).filter_by(trail_id=id).all()
-#                 for pt in point_records:
-#                     pt_geom = mapping(to_shape(pt.location))
-#                     features.append(
-#                         {
-#                             "type": "Feature",
-#                             "geometry": pt_geom,
-#                             "properties": {"type": "point", "name": pt.name},
-#                         }
-#                     )
-
-#             feature_collection = {"type": "FeatureCollection", "features": features}
-#             return jsonify(feature_collection), 200
-
-#         except Exception as e:
-#             return jsonify({"message": "伺服器錯誤", "error": str(e)}), 500
