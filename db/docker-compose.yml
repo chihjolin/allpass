@@ -26,7 +26,7 @@ services:
       - postgres
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zoe} -d ${DB_NAME:-allpass_test}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-zoe} -d ${DB_NAME:-allpass_test}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,5 +38,4 @@ volumes:
     name: my_postgis_test
 
 networks:
-  postgres:
-    external: True
+  postgres: # external: True

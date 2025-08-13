@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import LeafletMap from '../components/LeafletMap';
 import MapWithTrail from '../components/MapWithTrail';
 import PredictBtn from '../components/PredictBtn';
 import TimelineDisplay from '../components/TimelineDisplay';
@@ -116,7 +115,9 @@ export default function PlanPage() {
         <aside className="plan-sidebar">
           <h2 className="plan-sidebar-title">GPX 時間軸分析</h2>
           <div className="plan-gpx-upload">
-            <PredictBtn onResult={handleTimelineResult} trailId={id} currentTimelineData={timelineData} />
+            <PredictBtn onResult={(result) => {
+              handleTimelineResult(result);
+            }} trailId={id} currentTimelineData={timelineData} />
           </div>
           <div className="gpx-timeline-display plan-timeline-display">
             <TimelineDisplay timelineData={timelineData} />
