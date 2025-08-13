@@ -2,6 +2,38 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapWithTrail.css';
+import L from 'leaflet';
+
+// 預先建立不同類型的圖示
+const icons = {
+  start: L.icon({
+    iconUrl: '/libs/leaflet/images/icon_red.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [0, -41],
+    shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+    shadowSize: [41, 41],
+    shadowAnchor: [12, 41]
+  }),
+  comm_point: L.icon({
+    iconUrl: '/libs/leaflet/images/icon_yellow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [0, -41],
+    shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+    shadowSize: [41, 41],
+    shadowAnchor: [12, 41]
+  }),
+  default: L.icon({
+    iconUrl: '/libs/leaflet/images/icon_blue.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [0, -41],
+    shadowUrl: '/libs/leaflet/images/marker-shadow.png',
+    shadowSize: [41, 41],
+    shadowAnchor: [12, 41]
+  })
+};
 
 // 調整地圖視圖的組件
 function AdjustMapView({ routeFeatures, pointFeatures }) {
@@ -90,16 +122,26 @@ export default function MapWithTrail({ trail, trailId, style = { height: '400px'
           opacity={0.8}
         />
       ))}
-      {pointFeatures.map((feature, index) => (
-        <Marker key={index} position={[feature.geometry.coordinates[1], feature.geometry.coordinates[0]]}>
-          <Popup>
-            <div>
-              <h4>{feature.properties.name}</h4>
-              <p>{feature.properties.description || '無描述'}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {pointFeatures.map((feature, index) => {
+        const type = feature.properties.type || 'default';
+        return (
+          <Marker
+            key={index}
+            position={[
+              feature.geometry.coordinates[1],
+              feature.geometry.coordinates[0]
+            ]}
+            icon={icons[type] || icons.default}
+          >
+            <Popup>
+              <div>
+                <h4>{feature.properties.name}</h4>
+                <p>{feature.properties.description || '無描述'}</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }

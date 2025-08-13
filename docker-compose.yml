@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1" ]
-      interval: 30s
+      interval: 10s
       timeout: 5s
       retries: 5
 
