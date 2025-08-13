@@ -34,7 +34,7 @@ CREATE TABLE paths.points_of_interest (
     name VARCHAR(100) NOT NULL,                     -- 觀測點名稱
     poi_type VARCHAR(50),                           -- 觀測點類型 (e.g., '山頂', '登山口', '通訊點')
     location GEOMETRY(PointZ, 4326) NOT NULL,       -- 觀測點的地理位置，使用 PointZ 類型儲存經度、緯度和海拔
-    description TEXT,                               -- 詳細描述，用於補充說明 (優化：新增欄位)
+    description TEXT,                               -- 詳細描述，用於補充說明
     created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間
     updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間，由觸發器自動更新
 );
@@ -71,20 +71,35 @@ CREATE TABLE user_gpx.gpx_track_points (
     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
     gpx_upload_id BIGINT NOT NULL REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 外鍵
     location GEOMETRY(PointZ, 4326) NOT NULL,       -- 軌跡點的地理位置 (經度、緯度、高程)，使用 PointZ 類型
-    recorded_at TIMESTAMPTZ NOT NULL                -- 軌跡點記錄的時間 (優化：避免關鍵字"timestamp")
-);
+    recorded_at TIMESTAMPTZ NOT NULL                -- 軌跡點記錄的時間
 
 -------------------------------------
 -- Schema: weather (天氣資料)
 -------------------------------------
--- weather.readings: 儲存各個地點和時間的天氣觀測數據
+-- weather.stations: 儲存天氣站
+CREATE TABLE weather.stations (
+    id SERIAL PRIMARY KEY,                          -- 天氣站的唯一識別碼
+    station_name VARCHAR(100) NOT NULL UNIQUE,      -- 天氣站名稱，必須唯一
+    location GEOMETRY(Point, 4326) NOT NULL,        -- 天氣站的地理位置
+    created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間
+    updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間
+);
+
+-- weather.readings: 儲存各個天氣站和時間的天氣觀測數據
+-- 這是模型訓練的**核心特徵資料表**
 CREATE TABLE weather.readings (
-    id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
-    poi_id INT REFERENCES paths.points_of_interest(id), -- 外鍵，關聯到 paths.points_of_interest
-    location GEOMETRY(Point, 4326) NOT NULL,        -- 天氣觀測地點的地理位置 (Point 類型即可)
-    recorded_at TIMESTAMPTZ NOT NULL,               -- 天氣數據記錄的時間 (優化：避免關鍵字"timestamp")
-    weather_data JSONB NOT NULL,                    -- 使用 JSONB 儲存天氣詳細數據，提供高度的彈性與擴展性
-    source VARCHAR(50)                              -- 天氣數據的來源 (e.g., 'CWB', 'OpenWeatherMap')
+    id BIGSERIAL PRIMARY KEY,                       -- 觀測記錄的唯一識別碼
+    station_id INT REFERENCES weather.stations(id), -- 外鍵，關聯到 weather.stations，實現正規化
+    
+    -- 模型訓練的核心特徵欄位，都已獨立出來
+    recorded_at TIMESTAMPTZ NOT NULL,               -- 時間序列特徵：天氣數據記錄的時間
+    temperature_celsius NUMERIC(4, 1) NOT NULL,     -- 數值特徵：溫度 (攝氏度)
+    humidity_percent SMALLINT NOT NULL CHECK (humidity_percent >= 0 AND humidity_percent <= 100), -- 數值特徵：相對濕度
+    precipitation_mm NUMERIC(6, 2) NOT NULL,        -- 數值特徵：累積降雨量
+    
+    -- 非核心，但仍有價值的欄位
+    source VARCHAR(50) NOT NULL,                    -- 數據來源 (e.g., 'CWB', 'OpenWeatherMap')
+    weather_metadata JSONB                          -- 用於存放額外的非結構化元資料，如風速、風向、感測器ID等
 );
 
 ---
@@ -96,7 +111,8 @@ CREATE INDEX idx_paths_poi_trail_id ON paths.points_of_interest(trail_id);
 CREATE INDEX idx_user_gpx_uploads_user_id ON user_gpx.gpx_uploads(user_id);
 CREATE INDEX idx_user_gpx_uploads_trail_id ON user_gpx.gpx_uploads(trail_id);
 CREATE INDEX idx_user_gpx_gpx_track_points_upload_id ON user_gpx.gpx_track_points(gpx_upload_id);
-CREATE INDEX idx_weather_readings_poi_id ON weather.readings(poi_id);
+CREATE INDEX idx_weather_readings_station_id ON weather.readings(station_id);
+CREATE INDEX idx_weather_readings_recorded_at ON weather.readings(recorded_at);
 
 -- 建立 PostGIS 空間索引 (GIST Index)
 -- GIST 索引對於空間查詢 (例如：查找特定區域內的點/線) 至關重要
@@ -105,10 +121,13 @@ CREATE INDEX idx_paths_poi_location ON paths.points_of_interest USING GIST (loca
 CREATE INDEX idx_user_gpx_gpx_track_points_location ON user_gpx.gpx_track_points USING GIST (location);
 CREATE INDEX idx_weather_readings_location ON weather.readings USING GIST (location);
 CREATE INDEX idx_user_gpx_gpx_uploads_route_geometry ON user_gpx.gpx_uploads USING GIST (gpx_route_geometry);
+CREATE INDEX idx_weather_stations_location ON weather.stations USING GIST (location);
 
 -- 建立 JSONB 索引 (GIN Index)
 -- GIN 索引對於查詢 JSONB 內部鍵值對非常有效
 CREATE INDEX idx_weather_data_gin ON weather.readings USING GIN (weather_data);
+CREATE INDEX idx_weather_metadata_gin ON weather.readings USING GIN (weather_metadata);
+
 
 ---
 --- 自動更新 updated_at 欄位的觸發器
@@ -132,5 +151,19 @@ EXECUTE FUNCTION update_timestamp_column();
 -- 應用觸發器到 paths.points_of_interest 資料表
 CREATE TRIGGER update_paths_poi_timestamp
 BEFORE UPDATE ON paths.points_of_interest
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp_column();
+
+-- 觸發器 (假設您也想追蹤 weather.stations 的更新時間)
+CREATE OR REPLACE FUNCTION update_timestamp_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_weather_stations_timestamp
+BEFORE UPDATE ON weather.stations
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp_column();
