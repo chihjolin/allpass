@@ -14,7 +14,7 @@ services:
     networks:
       - allpass-network
     restart: unless-stopped
-  
+
   #Postgres(postgis) 服務
   postgis:
     image: postgis/postgis:16-3.4
@@ -30,7 +30,7 @@ services:
       - allpass-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-allpass_user} -d ${POSTGRES_DB:-allpass_db}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-allpass_user} -d ${POSTGRES_DB:-allpass_db}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,8 +53,8 @@ services:
 
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1"]
-      interval: 30s
+      test: [ "CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1" ]
+      interval: 10s
       timeout: 5s
       retries: 5
 
