@@ -21,13 +21,13 @@ services:
       - postgis_test:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
     ports:
-      - "${DB_HOST_PORT:-25432}:5432"
+      - "${DB_HOST_PORT:-5432}:5432"
     networks:
       - postgres
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-zoe} -d ${DB_NAME:-allpass_test}" ]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -38,4 +38,5 @@ volumes:
     name: my_postgis_test
 
 networks:
-  postgres: # external: True
+  postgres: 
+    # external: True
