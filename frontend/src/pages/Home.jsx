@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import TrailCard from '../components/TrailCard';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import Navbar from '../components/Navbar';
 
 // Home 組件：負責載入並顯示所有步道卡片
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
 
   return (
     <>
+      <Navbar />
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

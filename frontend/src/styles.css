@@ -133,7 +133,7 @@ header {
 /* --- 首頁樣式 --- */
 .home-header {
     position: relative;
-    background: url('/img/Yushan.jpg') no-repeat center center;
+    background: url('/img/Yushan.avif') no-repeat center center;
     background-size: cover;
     padding: 320px 20px;
 }
@@ -168,7 +168,7 @@ header {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
-    margin: 10px;
+    margin: 50px 100px;
 }
 
 .trail-card {

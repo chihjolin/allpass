@@ -1,0 +1,90 @@
+/* Navbar 基本樣式 */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    /* 確保 Navbar 位於最上層 */
+    background-color: transparent;
+    /* 初始透明背景 */
+    color: white;
+    padding: 10px 20px;
+    transition: background-color 0.3s ease;
+    /* 背景顏色變化過渡 */
+}
+
+.navbar.scrolled {
+    background-color: #00796b;
+    /* 滾動後的背景顏色 */
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-logo a {
+    text-decoration: none;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.navbar-links {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.navbar-links a {
+    text-decoration: none;
+    color: white;
+    font-size: 1rem;
+}
+
+.navbar-links a:hover {
+    text-decoration: underline;
+}
+
+/* 響應式設計 */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 15px;
+    margin-right: auto;
+}
+
+.menu-icon {
+    font-size: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+
+    .navbar-links {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        position: absolute;
+        top: 60px;
+        left: 20px;
+        /* 調整為靠左對齊 */
+        background-color: #00796b;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .navbar-links.open {
+        display: flex;
+    }
+}
