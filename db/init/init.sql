@@ -104,13 +104,16 @@ CREATE TABLE weather.readings (
     station_id INT REFERENCES weather.stations(id), -- 外鍵，關聯到 weather.stations，實現正規化
     
     -- 模型訓練的核心特徵欄位，都已獨立出來
-    recorded_at TIMESTAMPTZ NOT NULL,               -- 時間序列特徵：天氣數據記錄的時間
-    temperature_celsius NUMERIC(4, 1) NOT NULL,     -- 數值特徵：溫度 (攝氏度)
-    humidity_percent SMALLINT NOT NULL CHECK (humidity_percent >= 0 AND humidity_percent <= 100), -- 數值特徵：相對濕度
-    precipitation_mm NUMERIC(6, 2) NOT NULL,        -- 數值特徵：累積降雨量
+    -- 時間拆成日期與時間
+    recorded_date DATE NOT NULL,                    -- 觀測日期
+    recorded_time TIME WITHOUT TIME ZONE NOT NULL,  -- 觀測時間（不含時區）
+    -- recorded_at TIMESTAMPTZ NOT NULL,            -- 時間序列特徵：天氣數據記錄的時間
+    temperature_celsius NUMERIC(4, 1),              -- 數值特徵：溫度 (攝氏度)
+    humidity_percent SMALLINT CHECK (humidity_percent >= 0 AND humidity_percent <= 100), -- 數值特徵：相對濕度
+    precipitation_mm NUMERIC(6, 2),        -- 數值特徵：累積降雨量
     
     -- 非核心，但仍有價值的欄位
-    source VARCHAR(50) NOT NULL,                    -- 數據來源 (e.g., 'CWB', 'OpenWeatherMap')
+    source VARCHAR(50),                    -- 數據來源 (e.g., 'CWB', 'OpenWeatherMap')
     weather_metadata JSONB                          -- 用於存放額外的非結構化元資料，如風速、風向、感測器ID等
 );
 

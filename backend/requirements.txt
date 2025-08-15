@@ -27,3 +27,5 @@ urllib3==2.5.0
 Werkzeug==3.1.3
 shapely
 redis
+pandas  #測試匯入資料用
+openpyxl #測試匯入資料用
