@@ -55,21 +55,26 @@ CREATE TABLE user_gpx.users (
     created_at TIMESTAMPTZ DEFAULT NOW()            -- 帳戶建立時間
 );
 
+
 -- user_gpx.gpx_uploads: 儲存使用者上傳的 GPX 檔案的摘要資訊
 -- 使用者上傳的原始 GPX 檔案紀錄
 CREATE TABLE user_gpx.gpx_uploads (
     id BIGSERIAL PRIMARY KEY,
+    session_uuid UUID NOT NULL UNIQUE, -- 和 poi_visit_records 關聯的 uuid
     user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.users 表，使用者被刪除時其上傳記錄也刪除
     file_name VARCHAR(255) NOT NULL,                -- 原始 GPX 檔案名稱
-    trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑
-    -- segment_name VARCHAR(255),                      -- 使用者為此路徑段提供的名稱
+    trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑, 可關聯到行進時間的天氣
+    -- segment_name VARCHAR(255),                   -- 使用者為此路徑段提供的名稱
+    -- route_geometry GEOMETRY(LineString, 4326),      -- 使用者上傳的gpx軌跡
     uploaded_at TIMESTAMPTZ DEFAULT NOW()           -- 使用者實際上傳時間
 );
 
--- 系統針對 GPX 的處理結果
+-- 系統針對 GPX 的分析結果
 CREATE TABLE user_gpx.gpx_analysis (
     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼，使用 BIGSERIAL 避免 ID 不足
     gpx_upload_id BIGINT NOT NULL REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.gpx_uploads 表
+    user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE,
+    trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑, 可關聯到行進時間的天氣
     record_date DATE NOT NULL,                      -- GPX 記錄的日期 (從 GPX 內部時間戳提取)
     start_at TIMESTAMPTZ NOT NULL,                  -- GPX 記錄的開始時間點 (帶時區)
     end_at TIMESTAMPTZ NOT NULL,                    -- GPX 記錄的結束時間點 (帶時區)
@@ -81,6 +86,17 @@ CREATE TABLE user_gpx.gpx_analysis (
     processed_at TIMESTAMPTZ DEFAULT NOW()          -- 處理完成時間
 );
 
+-- user_gpx.poi_visit_records: 紀錄user通過poi的時間
+CREATE TABLE user_gpx.poi_visit_records (
+    id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
+    session_uuid UUID NOT NULL,  -- 新增，代表一次登山紀錄的唯一ID 
+    user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.users 表，使用者被刪除時其上傳記錄也刪除
+    gpx_upload_id BIGINT REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 可為 NULL，事後綁定
+    poi_id INT NOT NULL REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, --外鍵，關聯到 paths.points_of_interest 表
+    recorded_at TIMESTAMPTZ NOT NULL,              -- 通過poi的時間 (帶時區)
+    is_orphan_session BOOLEAN NOT NULL DEFAULT TRUE --尚未綁定gpx_uploads.session_uuid 前就是orphan_session
+);
+
 -- -- user_gpx.gpx_track_points: 儲存 GPX 軌跡中的每一個點的詳細資訊
 -- CREATE TABLE user_gpx.gpx_track_points (
 --     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
@@ -89,13 +105,6 @@ CREATE TABLE user_gpx.gpx_analysis (
 --     recorded_at TIMESTAMPTZ NOT NULL                -- 軌跡點記錄的時間 (帶時區)
 -- );
 
--- user_gpx.poi_time_record: 紀錄通過poi的時間
-CREATE TABLE user_gpx.poi_visit_records (
-    id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
-    gpx_upload_id BIGINT NOT NULL REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.gpx_uploads 表
-    poi_id INT NOT NULL REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, --外鍵，關聯到 paths.points_of_interest 表
-    recorded_at TIMESTAMPTZ NOT NULL                -- 通過poi的時間 (帶時區)
-);
 
 -------------------------------------
 -- Schema: weather (天氣資料)
@@ -120,6 +129,10 @@ CREATE TABLE weather.readings (
     -- 時間拆成日期與時間
     recorded_date DATE NOT NULL,                    -- 觀測日期
     recorded_time TIME WITHOUT TIME ZONE NOT NULL,  -- 觀測時間（不含時區）
+    -- 合成 timestamp 欄位
+    recorded_at TIMESTAMP GENERATED ALWAYS AS (
+        recorded_date + recorded_time
+    ) STORED,
     -- recorded_at TIMESTAMPTZ NOT NULL,            -- 時間序列特徵：天氣數據記錄的時間
     temperature_celsius NUMERIC(4, 1),              -- 數值特徵：溫度 (攝氏度)
     humidity_percent SMALLINT CHECK (humidity_percent >= 0 AND humidity_percent <= 100), -- 數值特徵：相對濕度
@@ -132,7 +145,7 @@ CREATE TABLE weather.readings (
 
 
 -------------------------------------
---- Schema: ml_features (特徵)
+--- Schema: ml_features (特徵): 紀錄兩poi點間特徵
 -------------------------------------
 CREATE TABLE ml_features.time_prediction(
     id BIGSERIAL PRIMARY KEY,
@@ -141,18 +154,27 @@ CREATE TABLE ml_features.time_prediction(
     user_id INT REFERENCES user_gpx.users(id) ON DELETE CASCADE,
     poi_previous_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
     poi_current_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
-    poi_previous_geo GEOMETRY(Point, 4326),    
-    poi_current_geo GEOMETRY(Point, 4326),     
+    poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
+    poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
+    route_geometry GEOMETRY(LineString, 4326),  -- 路徑軌跡   
     poi_previous_leave_at TIMESTAMPTZ,          -- 離開前一個poi時間點
     poi_current_arrive_at TIMESTAMPTZ,          -- 抵達目前poi時間點
     weather_station_id INT REFERENCES weather.stations(id),
-    weather_temp NUMERIC,                       -- 行進於兩poi間平均氣溫
-    weather_precip NUMERIC,                     -- 行進於兩poi間降雨量
-    weather_humidity NUMERIC,                   -- 行進於兩poi間平均濕度
-    trail_feat1 NUMERIC,                        -- 兩poi間地理特徵1(e.g.爬升高度)
-    trail_feat2 NUMERIC,                        -- 兩poi間地理特徵2(e.g.坡度)
-    trail_feat3 NUMERIC,                        -- 兩poi間地理特徵3(e.g.曲折度)
-    interval_time NUMERIC,                       -- 兩poi間行進總時間（標籤）
+    avg_temperature NUMERIC,                    -- 平均氣溫
+    avg_humidity NUMERIC,                       -- 平均濕度
+    accumulate_precipitation NUMERIC,           -- 累積降雨量
+    distance_m NUMERIC,                         -- 水平距離
+    elevation_change NUMERIC,                   -- 海拔變化
+    slope_std_dev NUMERIC,                      -- 坡度標準差
+    slope_variance NUMERIC,                     -- 坡度變異數
+    max_slope NUMERIC,                          -- 最大波度
+    slope_freq_dist NUMERIC,                    -- 坡度頻率分布
+    max_slope_time_diff NUMERIC,                -- 最大坡度高低時間差
+    poi_time_diff NUMERIC,                      -- 時間差（標籤）
+    elevation_range NUMERIC,                    -- 海拔範圍
+    risk_evaluation INT CHECK (risk_evaluation IN (0,1)),  -- 0/1 表示海拔風險
+    max_slope_point GEOMETRY(Point, 4326),      -- 最大坡度點
+    comm_point_count INT,                       -- 通訊點數量
     processed_at TIMESTAMPTZ DEFAULT NOW(),
     feature_version BIGINT                      -- 建立特徵版本便於版本管理與重現實驗
 );
@@ -188,18 +210,18 @@ CREATE TABLE paths.trail_stations(
 
 -- 標準 B-tree 索引 (適用於外鍵查詢和等值/範圍查詢)
 -- CREATE INDEX idx_paths_poi_trail_id ON paths.points_of_interest(trail_id);
-CREATE INDEX idx_user_gpx_uploads_user_id ON user_gpx.gpx_uploads(user_id);
-CREATE INDEX idx_user_gpx_uploads_trail_id ON user_gpx.gpx_uploads(trail_id);
+CREATE INDEX idx_gpx_uploads_user_id ON user_gpx.gpx_uploads(user_id);
+CREATE INDEX idx_gpx_uploads_trail_id ON user_gpx.gpx_uploads(trail_id);
 -- CREATE INDEX idx_gpx_track_points_upload_time ON user_gpx.gpx_track_points(gpx_upload_id, recorded_at);
-CREATE INDEX idx_weather_readings_station_time ON weather.readings(station_id, recorded_at);
+CREATE INDEX idx_weather_readings ON weather.readings(station_id, recorded_at);
 
 -- 建立 PostGIS 空間索引 (GIST Index)
 -- GIST 索引對於空間查詢 (例如：查找特定區域內的點/線) 至關重要
-CREATE INDEX idx_paths_trails_route_geometry ON paths.trails USING GIST (route_geometry);
-CREATE INDEX idx_paths_poi_location ON paths.points_of_interest USING GIST (geolocation);
+CREATE INDEX idx_trails_route_geometry ON paths.trails USING GIST (route_geometry);
+CREATE INDEX idx_poi_location ON paths.points_of_interest USING GIST (geolocation);
 -- CREATE INDEX idx_user_track_points_location ON user_gpx.gpx_track_points USING GIST (geolocation);
-CREATE INDEX idx_user_uploads_route_geometry ON user_gpx.gpx_uploads USING GIST (gpx_route_geometry);
-CREATE INDEX idx_weather_stations_location ON weather.stations USING GIST (geolocation);
+-- CREATE INDEX idx_user_uploads_route_geometry ON user_gpx.gpx_uploads USING GIST (gpx_route_geometry);
+CREATE INDEX idx_stations_location ON weather.stations USING GIST (geolocation);
 
 -- 建立 JSONB 索引 (GIN Index)
 -- GIN 索引對於查詢 JSONB 內部鍵值對非常有效
