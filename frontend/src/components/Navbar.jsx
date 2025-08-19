@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => {
-            if (window.scrollY > 630) { // 假設 header 高度為 100px
+            if (window.scrollY > 630) { // 隨 header 高度手動調整= = 
                 setIsScrolled(true);
             } else {
                 setIsScrolled(false);
@@ -21,6 +22,10 @@ export default function Navbar() {
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
+    };
+
+    const handleLoginClick = () => {
+        navigate('/login');
     };
 
     return (
@@ -37,6 +42,11 @@ export default function Navbar() {
                     <li><Link to="/plan/1">路線規劃</Link></li>
                     <li><Link to="/about">關於我們</Link></li>
                 </ul>
+                <div className="login">
+                    <button className="navbar-login-button" onClick={handleLoginClick}>
+                        <img src="/icons/login.avif" alt="Login" className="login-icon" />
+                    </button>
+                </div>
             </div>
         </nav>
     );

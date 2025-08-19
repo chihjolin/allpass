@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import TrailDetail from './pages/TrailDetail';
 import PlanPage from './pages/PlanPage';
+import Login from './pages/Login';
 import './components/Navbar.css'; // 引入 Navbar 樣式
 
 // App 組件負責定義前端的路由
@@ -16,6 +17,8 @@ export default function App() {
         <Route path="/trail/:id" element={<TrailDetail />} />
         {/* 路線規劃頁 */}
         <Route path="/plan/:id" element={<PlanPage />} />
+        {/* 登入頁 */}
+        <Route path="/login" element={<Login />} />
       </Routes>
     </>
   );

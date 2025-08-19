@@ -4,6 +4,7 @@
     top: 0;
     left: 0;
     width: 100%;
+    overflow: hidden;
     z-index: 1000;
     /* 確保 Navbar 位於最上層 */
     background-color: transparent;
@@ -23,6 +24,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    max-width: 100%;
+    /* 確保容器寬度不超出頁面 */
+    padding: 0 50px 0 10px;
+    /* 增加左右內邊距，防止內容超出 */
+    box-sizing: border-box;
+    /* 包含內邊距和邊框在寬度計算內 */
 }
 
 .navbar-logo a {
@@ -87,4 +94,29 @@
     .navbar-links.open {
         display: flex;
     }
+}
+
+.login-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: auto;
+    /* 確保按鈕在右邊 */
+    box-shadow: none;
+}
+
+.login-icon {
+    background: none;
+    width: 30px;
+    height: 30px;
+    box-shadow: none;
+}
+
+.navbar-login-button {
+    background: none;
+    box-shadow: none;
+    border: none;
+    margin-top: 5px;
+    cursor: pointer;
 }
