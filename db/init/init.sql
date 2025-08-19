@@ -52,6 +52,7 @@ CREATE TABLE paths.points_of_interest (
 CREATE TABLE user_gpx.users (
     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼，使用 BIGSERIAL 避免 ID 不足
     username VARCHAR(50) UNIQUE NOT NULL,           -- 使用者名稱，必須唯一且非空
+    password TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()            -- 帳戶建立時間
 );
 
