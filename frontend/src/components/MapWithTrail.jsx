@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import './MapWithTrail.css';
+import '../styles/MapWithTrail.css';
 
 // 調整地圖視圖的組件
 function AdjustMapView({ routeFeatures, pointFeatures }) {

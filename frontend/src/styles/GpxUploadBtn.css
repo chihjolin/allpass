@@ -1,0 +1,80 @@
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+/* Modal Content */
+.modal-content {
+    width: min(720px, 100%);
+    max-height: 85vh;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Modal Header */
+.modal-content .header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Modal Body */
+.modal-content .body {
+    padding: 16px 18px;
+    overflow: auto;
+}
+
+/* Close Button */
+.close-modal-btn {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* File Name Display */
+.file-name {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Report Table */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.report-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.report-table td.key {
+    color: #555;
+    white-space: nowrap;
+    font-weight: 600;
+    width: 30%;
+}
+
+.report-table td.value pre {
+    margin: 0;
+    padding: 8px;
+    background: #fafafa;
+    border-radius: 8px;
+    overflow-x: auto;
+}

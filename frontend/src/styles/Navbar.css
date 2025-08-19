@@ -25,11 +25,19 @@
     justify-content: space-between;
     align-items: center;
     max-width: 100%;
-    /* 確保容器寬度不超出頁面 */
     padding: 0 50px 0 10px;
-    /* 增加左右內邊距，防止內容超出 */
     box-sizing: border-box;
-    /* 包含內邊距和邊框在寬度計算內 */
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* logo 與 links 的間距 */
+}
+
+.navbar-right {
+    margin-left: auto;
 }
 
 .navbar-logo a {
@@ -42,9 +50,13 @@
 .navbar-links {
     list-style: none;
     display: flex;
+    flex-direction: row;
     gap: 15px;
-    margin-left: 0;
-    margin-right: auto;
+    position: static;
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    justify-content: flex-start;
 }
 
 .navbar-links a {
@@ -57,43 +69,8 @@
     text-decoration: underline;
 }
 
-/* 響應式設計 */
 .menu-toggle {
     display: none;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    margin-left: 15px;
-    margin-right: auto;
-}
-
-.menu-icon {
-    font-size: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
-    }
-
-    .navbar-links {
-        display: none;
-        flex-direction: column;
-        gap: 10px;
-        position: absolute;
-        top: 60px;
-        left: 20px;
-        /* 調整為靠左對齊 */
-        background-color: #00796b;
-        padding: 10px;
-        border-radius: 8px;
-    }
-
-    .navbar-links.open {
-        display: flex;
-    }
 }
 
 .login-button {

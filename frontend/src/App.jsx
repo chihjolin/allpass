@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import TrailDetail from './pages/TrailDetail';
 import PlanPage from './pages/PlanPage';
 import Login from './pages/Login';
-import './components/Navbar.css'; // 引入 Navbar 樣式
+import Profile from './pages/Profile';
 
 // App 組件負責定義前端的路由
 export default function App() {
@@ -19,6 +19,8 @@ export default function App() {
         <Route path="/plan/:id" element={<PlanPage />} />
         {/* 登入頁 */}
         <Route path="/login" element={<Login />} />
+        {/* 個人Profile頁 */}
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </>
   );

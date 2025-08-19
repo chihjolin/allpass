@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import MapWithTrail from '../components/MapWithTrail';
 import PredictBtn from '../components/PredictBtn';
 import TimelineDisplay from '../components/TimelineDisplay';
+import GpxUploadBtn from '../components/GpxUploadBtn';
 
 // PlanPage 組件：提供 GPX 檔案上傳與地圖展示功能
 export default function PlanPage() {
@@ -118,6 +119,10 @@ export default function PlanPage() {
             <PredictBtn onResult={(result) => {
               handleTimelineResult(result);
             }} trailId={id} currentTimelineData={timelineData} />
+            <GpxUploadBtn onUpload={(gpxData) => {
+              console.log('Uploaded GPX data:', gpxData);
+              // 在此處處理上傳的 GPX 資料
+            }} />
           </div>
           <div className="gpx-timeline-display plan-timeline-display">
             <TimelineDisplay timelineData={timelineData} />

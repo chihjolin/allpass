@@ -324,6 +324,15 @@ h2 {
 }
 
 /* --- GPX 上傳區樣式 --- */
+.upload-input {
+    display: none;
+}
+
+.upload-label {
+    display: flex;
+    text-align: center;
+}
+
 .gpx-section {
     background-color: #fff;
     padding: 20px;
