@@ -93,8 +93,10 @@ CREATE TABLE user_gpx.poi_visit_records (
     session_uuid UUID NOT NULL,  -- 新增，代表一次登山紀錄的唯一ID 
     user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.users 表，使用者被刪除時其上傳記錄也刪除
     gpx_upload_id BIGINT REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 可為 NULL，事後綁定
+    trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑, 可關聯到行進時間的天氣
     poi_id INT NOT NULL REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, --外鍵，關聯到 paths.points_of_interest 表
-    recorded_at TIMESTAMPTZ NOT NULL,              -- 通過poi的時間 (帶時區)
+    sequence_order INT,                             -- 註記在 trail 中的順序
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),          -- 通過poi的時間 (帶時區)
     is_orphan_session BOOLEAN NOT NULL DEFAULT TRUE --尚未綁定gpx_uploads.session_uuid 前就是orphan_session
 );
 
