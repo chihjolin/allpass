@@ -51,8 +51,9 @@ CREATE TABLE paths.points_of_interest (
 -- user_gpx.users: 儲存使用者基本資訊
 CREATE TABLE user_gpx.users (
     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼，使用 BIGSERIAL 避免 ID 不足
+    email VARCHAR(254) UNIQUE NOT NULL,             -- 使用者Email，必須唯一且非空
     username VARCHAR(50) UNIQUE NOT NULL,           -- 使用者名稱，必須唯一且非空
-    password TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()            -- 帳戶建立時間
 );
 
@@ -61,7 +62,7 @@ CREATE TABLE user_gpx.users (
 -- 使用者上傳的原始 GPX 檔案紀錄
 CREATE TABLE user_gpx.gpx_uploads (
     id BIGSERIAL PRIMARY KEY,
-    session_uuid UUID NOT NULL UNIQUE, -- 和 poi_visit_records 關聯的 uuid
+    session_uuid UUID,                              -- 和 poi_visit_records 關聯的 uuid
     user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.users 表，使用者被刪除時其上傳記錄也刪除
     file_name VARCHAR(255) NOT NULL,                -- 原始 GPX 檔案名稱
     trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑, 可關聯到行進時間的天氣
@@ -90,12 +91,12 @@ CREATE TABLE user_gpx.gpx_analysis (
 -- user_gpx.poi_visit_records: 紀錄user通過poi的時間
 CREATE TABLE user_gpx.poi_visit_records (
     id BIGSERIAL PRIMARY KEY,                       -- 唯一識別碼
-    session_uuid UUID NOT NULL,  -- 新增，代表一次登山紀錄的唯一ID 
+    session_uuid UUID,                              -- 新增，代表一次登山紀錄的唯一ID 
     user_id BIGINT NOT NULL REFERENCES user_gpx.users(id) ON DELETE CASCADE, -- 外鍵，關聯到 user_gpx.users 表，使用者被刪除時其上傳記錄也刪除
     gpx_upload_id BIGINT REFERENCES user_gpx.gpx_uploads(id) ON DELETE CASCADE, -- 可為 NULL，事後綁定
     trail_id INT REFERENCES paths.trails(id),       -- trail_id: 關聯到 paths.trails，表示此 GPX 可能屬於哪條官方路徑, 可關聯到行進時間的天氣
     poi_id INT NOT NULL REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, --外鍵，關聯到 paths.points_of_interest 表
-    sequence_order INT,                             -- 註記在 trail 中的順序
+    poi_order INT,                                  -- 註記在 trail 中的順序
     recorded_at TIMESTAMPTZ DEFAULT NOW(),          -- 通過poi的時間 (帶時區)
     is_orphan_session BOOLEAN NOT NULL DEFAULT TRUE --尚未綁定gpx_uploads.session_uuid 前就是orphan_session
 );
@@ -191,7 +192,7 @@ CREATE TABLE paths.trail_pois(
     id SERIAL PRIMARY KEY,                          -- 唯一識別碼
     trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE, -- 外鍵，關聯到 paths.trails 表，如果路徑被刪除，相關關聯也會被刪除
     poi_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, -- 外鍵，關聯到 paths.points_of_interest 表，如果POI被刪除，相關關聯也會被刪除
-    sequence_order INT,                             -- 註記在 trail 中的順序
+    poi_order INT,                             -- 註記在 trail 中的順序
     created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間
     updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間，預設為當前時間帶時區            
 );
@@ -201,9 +202,10 @@ CREATE TABLE paths.trail_stations(
     id SERIAL PRIMARY KEY,                          -- 唯一識別碼
     trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE, -- 外鍵，關聯到 paths.trails 表，如果路徑被刪除，相關關聯也會被刪除
     station_id INT REFERENCES weather.stations(id) ON DELETE CASCADE, -- 外鍵，關聯到 weather.stations 表，如果氣象站被刪除，相關關聯也會被刪除
-    sequence_order INT,                             -- 註記觀測站的優先順序
+    priority INT,                             -- 註記觀測站的優先順序
     created_at TIMESTAMPTZ DEFAULT NOW(),           -- 記錄建立時間
-    updated_at TIMESTAMPTZ DEFAULT NOW()            -- 記錄更新時間，預設為當前時間帶時區            
+    updated_at TIMESTAMPTZ DEFAULT NOW(),            -- 記錄更新時間，預設為當前時間帶時區
+    CONSTRAINT trail_station_unique UNIQUE (trail_id, station_id)            
 );
 
 
@@ -212,19 +214,17 @@ CREATE TABLE paths.trail_stations(
 -------------------------------------
 
 -- 標準 B-tree 索引 (適用於外鍵查詢和等值/範圍查詢)
--- CREATE INDEX idx_paths_poi_trail_id ON paths.points_of_interest(trail_id);
-CREATE INDEX idx_gpx_uploads_user_id ON user_gpx.gpx_uploads(user_id);
-CREATE INDEX idx_gpx_uploads_trail_id ON user_gpx.gpx_uploads(trail_id);
--- CREATE INDEX idx_gpx_track_points_upload_time ON user_gpx.gpx_track_points(gpx_upload_id, recorded_at);
+CREATE INDEX idx_gpx_analysis_user_id ON user_gpx.gpx_analysis(user_id);
+CREATE INDEX idx_gpx_analysis_trail_id ON user_gpx.gpx_analysis(trail_id);
 CREATE INDEX idx_weather_readings ON weather.readings(station_id, recorded_at);
 
 -- 建立 PostGIS 空間索引 (GIST Index)
 -- GIST 索引對於空間查詢 (例如：查找特定區域內的點/線) 至關重要
 CREATE INDEX idx_trails_route_geometry ON paths.trails USING GIST (route_geometry);
 CREATE INDEX idx_poi_location ON paths.points_of_interest USING GIST (geolocation);
--- CREATE INDEX idx_user_track_points_location ON user_gpx.gpx_track_points USING GIST (geolocation);
+CREATE INDEX idx_gpx_analysis_geometry ON user_gpx.gpx_analysis USING GIST (gpx_route_geometry);
 -- CREATE INDEX idx_user_uploads_route_geometry ON user_gpx.gpx_uploads USING GIST (gpx_route_geometry);
-CREATE INDEX idx_stations_location ON weather.stations USING GIST (geolocation);
+-- CREATE INDEX idx_stations_location ON weather.stations USING GIST (geolocation);
 
 -- 建立 JSONB 索引 (GIN Index)
 -- GIN 索引對於查詢 JSONB 內部鍵值對非常有效

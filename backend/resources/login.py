@@ -9,7 +9,7 @@ class Login(Resource):
         # 解析傳入參數
         parser = reqparse.RequestParser()
         parser.add_argument(
-            "username", type=str, required=True, help="Username cannot be blank"
+            "email", type=str, required=True, help="Email cannot be blank"
         )
         parser.add_argument(
             "password", type=str, required=True, help="Password cannot be blank"
@@ -20,19 +20,25 @@ class Login(Resource):
         with engine.connect() as conn:
             result = conn.execute(
                 text(
-                    "SELECT id, password FROM user_gpx.users WHERE username = :username"
+                    "SELECT id, password_hash, username FROM user_gpx.users WHERE email = :email"
                 ),
-                {"username": data["username"]},
+                {"email": data["email"]},
             ).fetchone()
 
         if result is None:
             return {"message": "User not found"}, 404
 
-        user_id, hashed_password = result
+        user_id, password_hash, username = result
 
         # 驗證密碼
-        if not check_password_hash(hashed_password, data["password"]):
+        if not check_password_hash(password_hash, data["password"]):
             return {"message": "Invalid credentials"}, 401
 
-        # TODO: 這裡可以產生 JWT 或 session token 回傳
-        return {"message": "Login successful", "user_id": user_id}, 200
+        # 這裡可以產生 JWT 或 session token 回傳
+        return {
+            "message": "Login successful",
+            "data": {
+                "user_id": user_id,
+                "username": username,
+            },
+        }, 200
