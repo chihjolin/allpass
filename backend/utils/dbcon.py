@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 # # 讀取 .env 設定(僅開發測試用)
-load_dotenv(override=True)
+# load_dotenv(override=True)
 
 
 # 組合連線字串

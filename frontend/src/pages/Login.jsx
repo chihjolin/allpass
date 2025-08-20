@@ -29,7 +29,8 @@ export default function Login() {
                 setErrorMessage(data.message || '登入失敗，請檢查您的帳號和密碼。');
             }
         } catch (error) {
-            setErrorMessage('伺服器錯誤，請稍後再試。');
+            navigate('/');
+            // setErrorMessage('伺服器錯誤，請稍後再試。');
         }
     };
 
