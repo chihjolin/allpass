@@ -4,12 +4,12 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from resources.health import Health
+from resources.login import Login
 from resources.predictions import Predictions
+from resources.register import RegisterUser
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
 from resources.weather import Weather
-from fastapi import FastAPI
-
 
 # --- 初始化 Flask App  ---
 app = Flask(__name__)
@@ -18,13 +18,15 @@ api = Api(app)
 
 
 # --- 註冊API ---
-api.add_resource(Health, "/health") #健康檢查路由
+api.add_resource(Health, "/health")  # 健康檢查路由
 api.add_resource(Trails, "/api/trails")
 api.add_resource(Trail, "/api/trails/<string:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
 api.add_resource(Tiles, "/api/tiles/download")
 api.add_resource(Predictions, "/api/time")
 # api.add_resource(Predictions, "/api/predictions")
+api.add_resource(RegisterUser, "/api/register")
+api.add_resource(Login, "/api/login")
 
 
 # 測試一下

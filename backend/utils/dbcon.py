@@ -21,7 +21,12 @@ print("POSTGRES_URL:", POSTGRES_URL)
 
 
 # 建立 Engine 和 Session
-engine = create_engine(POSTGRES_URL, echo=False, future=True)
+engine = create_engine(
+    POSTGRES_URL,
+    connect_args={"options": "-c timezone=Asia/Taipei"},
+    echo=False,
+    future=True,
+)
 
 # 可多執行緒使用的 ScopedSession
 SessionLocal = scoped_session(
