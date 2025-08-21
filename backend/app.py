@@ -8,6 +8,8 @@ from resources.predictions import Predictions
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
 from resources.weather import Weather
+from fastapi import FastAPI
+
 
 # --- 初始化 Flask App  ---
 app = Flask(__name__)
