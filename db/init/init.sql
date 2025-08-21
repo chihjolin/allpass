@@ -98,6 +98,7 @@ CREATE TABLE user_gpx.poi_visit_records (
     poi_id INT NOT NULL REFERENCES paths.points_of_interest(id) ON DELETE CASCADE, --外鍵，關聯到 paths.points_of_interest 表
     poi_order INT,                                  -- 註記在 trail 中的順序
     recorded_at TIMESTAMPTZ DEFAULT NOW(),          -- 通過poi的時間 (帶時區)
+    nearest_time TIMESTAMPTZ,                       -- 四捨五入到最接近整點小時，用於串氣象資料
     is_orphan_session BOOLEAN NOT NULL DEFAULT TRUE --尚未綁定gpx_uploads.session_uuid 前就是orphan_session
 );
 
