@@ -1,10 +1,8 @@
 from flask_restful import Resource
-from sqlalchemy import text
 from geoalchemy2.shape import to_shape
-#from models import POIModel, TrailModel
 from shapely.geometry import mapping
+from sqlalchemy import text
 from utils.dbcon import SessionLocal, engine
-from utils.dbcon import engine
 
 
 class Trails(Resource):
@@ -20,13 +18,14 @@ class Trails(Resource):
                 trails = conn.execute(text(query_sql)).all()
                 result = [
                     {
-                        "id":t.id, 
+                        "id": t.id,
                         "name": t.trail_name_ch,
                         "location": t.location_name,
-                        "difficulty": "-", 
-                        "permitRequired": t.permit_required
+                        "difficulty": "-",
+                        "permitRequired": t.permit_required,
                     }
-                    for t in trails]
+                    for t in trails
+                ]
             return {"message": "成功查到所有步道基本資料", "trails": result}, 200
         except Exception as e:
             return {"message": "伺服器錯誤", "error": str(e)}, 500
@@ -40,17 +39,17 @@ class Trail(Resource):
         try:
             features = []
             with engine.connect() as conn:
-                #路線與氣象站詳細資料
+                # 路線與氣象站詳細資料
                 query_sql = """
                     SELECT 
-                        t.id AS trail_id,
+                        t.id,
                         t.trail_name_ch,
                         t.location_name,
                         t.permit_required,
                         t.length_km,
                         t.elevation_start_m,
                         t.elevation_end_m,
-                        json_agg(DISTINCT jsonb_build_object(
+                        json_agg(jsonb_build_object(
                             'station_id', s.id,
                             'station_code', s.station_code,
                             'station_name', s.station_name,
@@ -60,35 +59,75 @@ class Trail(Resource):
                     LEFT JOIN paths.trail_stations ts ON t.id = ts.trail_id
                     LEFT JOIN weather.stations s ON ts.station_id = s.id
                     WHERE t.id = :trail_id
-                    GROUP BY t.id, t.trail_name_ch;
+                    GROUP BY t.id;
                     """
                 trail = conn.execute(text(query_sql), {"trail_id": id}).first()
-            #with SessionLocal() as session:
-                # trail = session.query(TrailModel).filter_by(trail_id=id).first()
                 if not trail:
                     return {"message": "找不到該步道"}, 404
                 # postgis(wkb) -> shapely(linestring) -> GeoJSON
                 trail_geom = mapping(to_shape(trail.route_geometry))
+                features = []
                 # 建立路徑feature
                 features.append(
                     {
                         "type": "Feature",
                         "geometry": trail_geom,
                         "properties": {
-                            "id":trail.id, 
+                            "id": trail.id,
                             "name": trail.trail_name_ch,
                             "location": trail.location_name,
                             "permitRequired": trail.permit_required,
                             "length_km": f"{trail.length_km} 公里",
                             "elevation_start_m": f"起始海拔{trail.elevation_start_m} 公尺",
                             "elevation_end_m": f"最高海拔{trail.elevation_end_m} 公尺",
-                            "weatherStation": [{
-                                "id": trail.station_id,
-                                "code": trail.station_code,
-                                "name": trail.station_name}]
+                            "weatherStation": [
+                                {
+                                    "id": trail.station_id,
+                                    "code": trail.station_code,
+                                    "name": trail.station_name,
+                                }
+                            ],
                         },
                     }
                 )
+                query_sql = """
+                    SELECT 
+                        t.id as trail_id,
+                        json_agg(jsonb_build_object(
+                            'poi_id', p.id,
+                            'poi_type', p.poi_type,
+                            'poi_name', p.poi_name,
+                            'poi_geo', p.geolocation
+                        ))AS pois
+                    FROM paths.trails t
+                    LEFT join paths.trail_pois tp on t.id = tp.trail_id 
+                    LEFT join paths.points_of_interest p on tp.poi_id = p.id 
+                    WHERE t.id = 1
+                    GROUP BY t.id;
+                """
+                result = conn.execute(text(query_sql)).first()
+                pois_jsonb = result["pois"]
+
+                # 遍歷每個 POI
+                for pt in pois_jsonb:
+                    # 將 geojson 轉成 shapely geometry
+                    pt_geom = mapping(to_shape(pt["poi_geo"]))
+                    features.append(
+                        {
+                            "type": "Feature",
+                            "geometry": pt_geom,
+                            "properties": {
+                                "type": pt.get("poi_type"),
+                                "id": pt.get("poi_id"),
+                                "name": pt.get("poi_name"),
+                                "order": pt.get(
+                                    "poi_order"
+                                ),  # 如果你在 SQL 裡沒選到，可以先填 None
+                                "description": pt.get("description"),  # 同上
+                            },
+                        }
+                    )
+
                 # point_records = session.query(POIModel).filter_by(trail_id=id).all()
                 # for pt in point_records:
                 #     pt_geom = mapping(to_shape(pt.location))
@@ -111,4 +150,3 @@ class Trail(Resource):
             return feature_collection, 200
         except Exception as e:
             return {"message": "伺服器錯誤", "error": str(e)}, 500
-

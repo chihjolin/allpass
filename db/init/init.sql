@@ -15,7 +15,7 @@ CREATE SCHEMA IF NOT EXISTS ml_features; -- 存放特徵
 -- paths.trails: 儲存詳細的官方路徑資訊
 CREATE TABLE paths.trails (
     id SERIAL PRIMARY KEY,                          -- serial id 自動遞增
-    trail_name_ch VARCHAR(100),                     -- 路徑中文名
+    trail_name_ch VARCHAR(100) NOT NULL UNIQUE,     -- 路徑中文名
     trail_name_en VARCHAR(100) NOT NULL UNIQUE,     -- 路徑英文名, 必須有值且非空字串
     location_name VARCHAR(50),                      -- 路徑地點                
     -- difficulty SMALLINT,                         -- 路徑難度 (例如 1-5 等級)
@@ -184,6 +184,30 @@ CREATE TABLE ml_features.time_prediction(
     feature_version BIGINT                      -- 建立特徵版本便於版本管理與重現實驗
 );
 
+CREATE TABLE ml_features.trail_segment_features(
+    id BIGSERIAL PRIMARY KEY,
+    trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE,
+    trail_name_en VARCHAR(100),
+    segment_order INT,
+    poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
+    poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
+    filename VARCHAR(100),
+    distance NUMERIC,                           -- 水平距離
+    elevation_range NUMERIC,
+    elevation_change NUMERIC,                   -- 海拔變化
+    elevation_gain NUMERIC,
+    elevation_loss NUMERIC,
+    high_elevation boolean,
+    max_slope_percent NUMERIC,
+    max_slope_degrees NUMERIC,
+    max_slope_point GEOMETRY(Point, 4326),
+    slope_std_dev NUMERIC,                     -- 坡度標準差
+    slope_variance NUMERIC,                    -- 坡度變異數  
+    slope_freq_dist JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),      -- 記錄建立時間
+    updated_at TIMESTAMPTZ DEFAULT NOW()       -- 記錄更新時間
+);
+
 -------------------------------------
 -- 建立關聯表
 -------------------------------------
@@ -281,3 +305,36 @@ BEGIN
         );
     END LOOP;
 END $$;
+
+
+-------------------------------------
+--- 建立一個自動計算 user_gpx.poi_visit_records.nearest_time 欄位的觸發器
+-------------------------------------
+-- 先刪除舊的 function（如果存在）
+DROP FUNCTION IF EXISTS user_gpx.set_nearest_time() CASCADE;
+
+-- 建立 function
+CREATE OR REPLACE FUNCTION user_gpx.set_nearest_time()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 如果 recorded_at 沒指定，先補上 NOW()
+    IF NEW.recorded_at IS NULL THEN
+        NEW.recorded_at := NOW();
+    END IF;
+
+    -- 四捨五入到最接近整點
+    NEW.nearest_time := date_trunc('hour', NEW.recorded_at)
+                        + interval '1 hour' * ROUND(EXTRACT(MINUTE FROM NEW.recorded_at)::numeric / 60.0);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 建立 trigger
+DROP TRIGGER IF EXISTS trg_set_nearest_time ON user_gpx.poi_visit_records;
+
+CREATE TRIGGER trg_set_nearest_time
+BEFORE INSERT OR UPDATE OF recorded_at
+ON user_gpx.poi_visit_records
+FOR EACH ROW
+EXECUTE FUNCTION user_gpx.set_nearest_time();
