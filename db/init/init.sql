@@ -168,30 +168,32 @@ CREATE TABLE ml_features.time_prediction(
     avg_temperature NUMERIC,                    -- 平均氣溫
     avg_humidity NUMERIC,                       -- 平均濕度
     accumulate_precipitation NUMERIC,           -- 累積降雨量
-    distance_m NUMERIC,                         -- 水平距離
+    distance NUMERIC,                           -- 水平距離
+    elevation_range NUMERIC,
     elevation_change NUMERIC,                   -- 海拔變化
-    slope_std_dev NUMERIC,                      -- 坡度標準差
-    slope_variance NUMERIC,                     -- 坡度變異數
-    max_slope NUMERIC,                          -- 最大波度
-    slope_freq_dist NUMERIC,                    -- 坡度頻率分布
-    max_slope_time_diff NUMERIC,                -- 最大坡度高低時間差
-    poi_time_diff NUMERIC,                      -- 時間差（標籤）
-    elevation_range NUMERIC,                    -- 海拔範圍
-    risk_evaluation INT CHECK (risk_evaluation IN (0,1)),  -- 0/1 表示海拔風險
-    max_slope_point GEOMETRY(Point, 4326),      -- 最大坡度點
-    comm_point_count INT,                       -- 通訊點數量
+    elevation_gain NUMERIC,
+    elevation_loss NUMERIC,
+    high_elevation boolean,
+    max_slope_percent NUMERIC,
+    max_slope_degrees NUMERIC,
+    max_slope_point GEOMETRY(Point, 4326),
+    slope_std_dev NUMERIC,                     -- 坡度標準差
+    slope_variance NUMERIC,                    -- 坡度變異數  
+    slope_freq_dist JSONB,
     processed_at TIMESTAMPTZ DEFAULT NOW(),
     feature_version BIGINT                      -- 建立特徵版本便於版本管理與重現實驗
 );
 
-CREATE TABLE ml_features.trail_segment_features(
+CREATE TABLE ml_features.trail_segments(
     id BIGSERIAL PRIMARY KEY,
     trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE,
     trail_name_en VARCHAR(100),
     segment_order INT,
+    filename VARCHAR(100),
+    poi_previous_id INT,                        -- 前一個poi id
+    poi_current_id INT,                         -- 目前poi id
     poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
     poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
-    filename VARCHAR(100),
     distance NUMERIC,                           -- 水平距離
     elevation_range NUMERIC,
     elevation_change NUMERIC,                   -- 海拔變化
