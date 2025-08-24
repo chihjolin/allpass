@@ -1,5 +1,5 @@
 import React from 'react';
-import './TimelineDisplay.css';
+import '../styles/TimelineDisplay.css';
 
 /**
  * TimelineDisplay 組件
