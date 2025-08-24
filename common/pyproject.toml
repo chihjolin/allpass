@@ -1,0 +1,48 @@
+# pyproject.toml
+
+# ==============================================================================
+# Build System Configuration
+# ==============================================================================
+# 指定建構專案所需要的工具，這是現代 Python 專案的標準設定。
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# ==============================================================================
+# Project Metadata (PEP 621)
+# ==============================================================================
+# 這是專案的核心元數據，pip 和其他工具會從這裡讀取資訊。
+[project]
+name = "allpass-common"
+version = "0.1.0"
+authors = [
+  { name = "allpassteam", email = "allpassteam@email.com" },
+]
+description = "A shared utilities package for the AllPass project."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+# 專案的運行時依賴項 (Runtime Dependencies)
+# 所有安裝這個套件的服務，都會自動安裝這些依賴。
+dependencies = [
+    "sqlalchemy",
+    "psycopg2-binary",  # 用於 PostgreSQL 的驅動程式
+    "python-dotenv",    # 用於在本地開發時讀取 .env 檔案
+]
+
+# ==============================================================================
+# Tool-specific Configuration
+# ==============================================================================
+
+# --- Setuptools Configuration ---
+[tool.setuptools.packages.find]
+# 這是 src-layout 的關鍵設定！
+# 告訴 setuptools 我們的 Python packages 位於 'src' 資料夾底下。
+# setuptools 會自動找到 src/common 這個 package。
+where = ["src"]

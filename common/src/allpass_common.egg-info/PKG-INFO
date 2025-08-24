@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: allpass-common
+Version: 0.1.0
+Summary: A shared utilities package for the AllPass project.
+Author-email: allpassteam <allpassteam@email.com>
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: sqlalchemy
+Requires-Dist: psycopg2-binary
+Requires-Dist: python-dotenv

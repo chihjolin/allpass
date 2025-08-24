@@ -1,3 +1,6 @@
+import sys
+print(sys.executable)
+print(sys.path)
 import importlib
 
 # importlib.reload(utils.dbcon)
@@ -24,7 +27,7 @@ from common.utils.dbcon import engine
 
 def main():
     data_folder = "./init/data"
-    excel_path = f"{data_folder}/allpass_data_1.0.2.xlsx"
+    excel_path = f"{data_folder}/allpass_data_1.0.3.xlsx"
     tables = get_all_tables(engine)
     imported_tables = insert_data(excel_path, engine)
     print(f"已匯入資料的資料表:{imported_tables}")
@@ -48,7 +51,7 @@ def main():
     weather_file = f"{data_folder}/weather_data.csv"
     insert_weather(weather_file, engine)
 
-    poi_visit_records = f"{data_folder}/timing_results_0821.csv"
+    poi_visit_records = f"{data_folder}/timing_results_0822.csv"
     insert_poi_visit_records(poi_visit_records, engine)
 
     feature_file = f"{data_folder}/feature_allfinal.csv"

@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-allpass.egg-info/PKG-INFO
-allpass.egg-info/SOURCES.txt
-allpass.egg-info/dependency_links.txt
-allpass.egg-info/requires.txt
-allpass.egg-info/top_level.txt
-common/utils/__init__.py
-common/utils/dbcon.py

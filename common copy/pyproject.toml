@@ -1,17 +1,17 @@
 #定義 common 為一個 package
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "allpass"
+name = "common"
 version = "0.1.0"
-description = "Common utilities for allpass project"
-authors = [{ name = "allpassuser", email = "allpassuser@email.com" }]
+description = "Shared utilities for allpass project"
+authors = [{ name = "allpassteam", email = "allpassteam@email.com" }]
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = ["sqlalchemy", "psycopg2-binary", "python-dotenv"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["common*"]
+include = ["*"]

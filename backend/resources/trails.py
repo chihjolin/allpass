@@ -2,7 +2,7 @@ from flask_restful import Resource
 from geoalchemy2.shape import to_shape
 from shapely.geometry import mapping
 from sqlalchemy import text
-
+import json
 from common.utils.dbcon import engine
 
 # from utils_tobedelete.dbcon import SessionLocal, engine
@@ -52,6 +52,7 @@ class Trail(Resource):
                         t.length_km,
                         t.elevation_start_m,
                         t.elevation_end_m,
+                        t.route_geometry,
                         json_agg(jsonb_build_object(
                             'station_id', s.id,
                             'station_code', s.station_code,
@@ -67,6 +68,8 @@ class Trail(Resource):
                 trail = conn.execute(text(query_sql), {"trail_id": id}).first()
                 if not trail:
                     return {"message": "找不到該步道"}, 404
+                
+                stations = json.loads(trail.stations) if trail.stations else []
                 # postgis(wkb) -> shapely(linestring) -> GeoJSON
                 trail_geom = mapping(to_shape(trail.route_geometry))
                 features = []
@@ -85,9 +88,10 @@ class Trail(Resource):
                             "elevation_end_m": f"最高海拔{trail.elevation_end_m} 公尺",
                             "weatherStation": [
                                 {
-                                    "id": trail.station_id,
-                                    "code": trail.station_code,
-                                    "name": trail.station_name,
+                                    "id": stations.station_id,
+                                    "code": stations.station_code,
+                                    "name": stations.station_name,
+                                    "geolocation": stations.geolocation
                                 }
                             ],
                         },
@@ -108,10 +112,10 @@ class Trail(Resource):
                             )
                             ORDER BY tp.poi_order
                         )AS pois
-                        from paths.trail_pois tp
-                        left join paths.points_of_interest p on tp.poi_id = p.id  
-                        left join paths.trails t on tp.trail_id = t.id
-                        where t.id = 1
+                        FROM paths.trail_pois tp
+                        LEFT JOIN paths.points_of_interest p on tp.poi_id = p.id  
+                        LEFT JOIN paths.trails t on tp.trail_id = t.id
+                        WHERE t.id = :trail_id
                         GROUP BY t.id, t.trail_name_ch;
                 """
                 result = conn.execute(text(query_sql), {"trail_id": trail.id}).first()

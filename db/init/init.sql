@@ -17,6 +17,7 @@ CREATE TABLE paths.trails (
     id SERIAL PRIMARY KEY,                          -- serial id 自動遞增
     trail_name_ch VARCHAR(100) NOT NULL UNIQUE,     -- 路徑中文名
     trail_name_en VARCHAR(100) NOT NULL UNIQUE,     -- 路徑英文名, 必須有值且非空字串
+    mount_name VARCHAR(100),                        -- 山岳名稱
     location_name VARCHAR(50),                      -- 路徑地點                
     -- difficulty SMALLINT,                         -- 路徑難度 (例如 1-5 等級)
     permit_required boolean NOT NULL DEFAULT false, -- 是否需要入山證
