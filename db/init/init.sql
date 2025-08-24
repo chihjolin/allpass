@@ -208,7 +208,9 @@ CREATE TABLE ml_features.time_prediction(
     max_slope_point GEOMETRY(Point, 4326),
     slope_std_dev NUMERIC,
     slope_variance NUMERIC,
-    slope_freq_dist NUMERIC
+    slope_freq_dist NUMERIC,
+    accumulated_time NUMERIC,
+    accumulated_distance NUMERIC
 );
 
 

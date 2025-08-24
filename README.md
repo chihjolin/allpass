@@ -29,3 +29,6 @@ npm run dev
 localhost:5173
 ### 或者用Docker
 用docker的話每次React有修改都要重built映像檔喔
+
+### 安裝共用模組common
+## 本地開發要在專案根目錄(allpass)執行pip install -e .

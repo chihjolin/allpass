@@ -54,6 +54,8 @@ def main():
     feature_file = f"{data_folder}/feature_allfinal.csv"
     insert_trailseg_features(feature_file, engine)
 
+    features = f"{data_folder}/feature_data_new.csv"
+
 
 def get_all_tables(engine):
     query = """
