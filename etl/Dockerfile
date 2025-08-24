@@ -1,18 +1,22 @@
-# 選擇 Python 基礎映像
 FROM python:3.12-slim
 
-# 設定工作目錄
+# 安裝必要套件
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# 複製 requirements.txt 並安裝套件
-COPY requirements.txt .
+# 安裝 ETL requirements
+COPY etl/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 複製整個專案到容器
-COPY . .
+# 複製 ETL 程式碼
+COPY etl/ /app/etl
 
-# 設定 PYTHONPATH 讓 utils 可以被找到
-ENV PYTHONPATH=/app
+# 複製 common
+COPY common/ /app/common
 
-# 預設執行指令 (可改成你的 ETL 主程式)
-CMD ["python", "-m", "init.init_postgres"]
+# 安裝 common local package
+RUN pip install -e .
+
+# 預設執行 ETL 初始化腳本
+CMD ["python", "etl/init/init_postgres.py"]

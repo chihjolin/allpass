@@ -37,10 +37,15 @@ services:
 
   #Backend 服務
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: allpass_backend_container
     env_file:
       - ./.env
+    volumes:
+        - ./common:/app/common   # 開發時熱更新   # 掛載共用模組 #生產環境通常不掛載 volume
+        - ./backend:/app/backend # 開發時熱更新
     ports:
       - "${FLASK_HOST_PORT:-5000}:${FLASK_PORT:-5000}"
     networks:
@@ -75,25 +80,67 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-volumes:
-  postgis_data:
-    name: allpass_postgis_data
-  redis_data:
-    name: allpass_redis_data
 
-#ETL 服務
+  #ETL 
   etl:
-    build: ./etl
+    build: 
+      context: .
+      dockerfile: etl/Dockerfile
     container_name: allpass_etl_container
     env_file:
       - ./.env
+    volumes:
+      - ./etl:/app/etl         # 開發時熱更新 ETL 程式碼
+      - ./common:/app/common   # 開發時熱更新 common
     networks:
       - allpass-network
     depends_on:
       postgis:
         condition: service_healthy
-    command: ["python", "-m", "init.init_postgres"]
-    restart: "no"   # ETL 是一次性 job，跑完就結束
+    # command: ["python", "-m", "init.init_postgres"]
+    # restart: "no"   # ETL 是一次性 job，跑完就結束
+
+
+  #LLM
+  llm:
+    build: 
+      context: .
+      dockerfile: aiservices/llm/Dockerfile
+    container_name: allpass_llm_container
+    env_file:
+      - ./.env
+    volumes:
+      - ./aiservices/llm:/app
+      - ./common:/app/common   # 共用模組
+    depends_on:
+      postgis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    networks:
+      - allpass_net
+
+
+
+  #Recommendation
+
+
+  #Time_Prediction
+
+
+  #Training
+
+
+
+
+
+
+
+volumes:
+  postgis_data:
+    name: allpass_postgis_data
+  redis_data:
+    name: allpass_redis_data
 
 networks:
   allpass-network:

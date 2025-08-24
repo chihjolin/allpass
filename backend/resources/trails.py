@@ -2,7 +2,10 @@ from flask_restful import Resource
 from geoalchemy2.shape import to_shape
 from shapely.geometry import mapping
 from sqlalchemy import text
-from utils.dbcon import SessionLocal, engine
+
+from common.utils.dbcon import engine
+
+# from utils_tobedelete.dbcon import SessionLocal, engine
 
 
 class Trails(Resource):
@@ -91,21 +94,27 @@ class Trail(Resource):
                     }
                 )
                 query_sql = """
-                    SELECT 
-                        t.id as trail_id,
-                        json_agg(jsonb_build_object(
-                            'poi_id', p.id,
-                            'poi_type', p.poi_type,
-                            'poi_name', p.poi_name,
-                            'poi_geo', p.geolocation
-                        ))AS pois
-                    FROM paths.trails t
-                    LEFT join paths.trail_pois tp on t.id = tp.trail_id 
-                    LEFT join paths.points_of_interest p on tp.poi_id = p.id 
-                    WHERE t.id = 1
-                    GROUP BY t.id;
+                        SELECT 
+                            t.id as trail_id,
+                            t.trail_name_ch as trail_name,
+                            json_agg(
+                                jsonb_build_object(
+                                'poi_id', p.id,
+                                'poi_type', p.poi_type,
+                                'poi_name', p.poi_name,
+                                'poi_geo', p.geolocation,
+                                'poi_order', tp.poi_order,
+                                'description', p.description
+                            )
+                            ORDER BY tp.poi_order
+                        )AS pois
+                        from paths.trail_pois tp
+                        left join paths.points_of_interest p on tp.poi_id = p.id  
+                        left join paths.trails t on tp.trail_id = t.id
+                        where t.id = 1
+                        GROUP BY t.id, t.trail_name_ch;
                 """
-                result = conn.execute(text(query_sql)).first()
+                result = conn.execute(text(query_sql), {"trail_id": trail.id}).first()
                 pois_jsonb = result["pois"]
 
                 # 遍歷每個 POI

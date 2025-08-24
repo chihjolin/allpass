@@ -152,37 +152,66 @@ CREATE TABLE weather.readings (
 -------------------------------------
 --- Schema: ml_features (特徵): 紀錄兩poi點間特徵
 -------------------------------------
+-- CREATE TABLE ml_features.time_prediction(
+--     id BIGSERIAL PRIMARY KEY,
+--     trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE,
+--     gpx_analysis_id INT REFERENCES user_gpx.gpx_analysis(id) ON DELETE CASCADE,
+--     user_id INT REFERENCES user_gpx.users(id) ON DELETE CASCADE,
+--     poi_previous_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
+--     poi_current_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
+--     poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
+--     poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
+--     route_geometry GEOMETRY(LineString, 4326),  -- 路徑軌跡   
+--     poi_previous_leave_at TIMESTAMPTZ,          -- 離開前一個poi時間點
+--     poi_current_arrive_at TIMESTAMPTZ,          -- 抵達目前poi時間點
+--     weather_station_id INT REFERENCES weather.stations(id),
+--     avg_temperature NUMERIC,                    -- 平均氣溫
+--     avg_humidity NUMERIC,                       -- 平均濕度
+--     accumulate_precipitation NUMERIC,           -- 累積降雨量
+--     distance NUMERIC,                           -- 水平距離
+--     elevation_range NUMERIC,
+--     elevation_change NUMERIC,                   -- 海拔變化
+--     elevation_gain NUMERIC,
+--     elevation_loss NUMERIC,
+--     high_elevation boolean,
+--     max_slope_percent NUMERIC,
+--     max_slope_degrees NUMERIC,
+--     max_slope_point GEOMETRY(Point, 4326),
+--     slope_std_dev NUMERIC,                     -- 坡度標準差
+--     slope_variance NUMERIC,                    -- 坡度變異數  
+--     slope_freq_dist JSONB,
+--     processed_at TIMESTAMPTZ DEFAULT NOW(),
+--     feature_version BIGINT                      -- 建立特徵版本便於版本管理與重現實驗
+-- );
+
 CREATE TABLE ml_features.time_prediction(
     id BIGSERIAL PRIMARY KEY,
     trail_id INT REFERENCES paths.trails(id) ON DELETE CASCADE,
-    gpx_analysis_id INT REFERENCES user_gpx.gpx_analysis(id) ON DELETE CASCADE,
-    user_id INT REFERENCES user_gpx.users(id) ON DELETE CASCADE,
-    poi_previous_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
-    poi_current_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
-    poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
-    poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
-    route_geometry GEOMETRY(LineString, 4326),  -- 路徑軌跡   
-    poi_previous_leave_at TIMESTAMPTZ,          -- 離開前一個poi時間點
-    poi_current_arrive_at TIMESTAMPTZ,          -- 抵達目前poi時間點
-    weather_station_id INT REFERENCES weather.stations(id),
-    avg_temperature NUMERIC,                    -- 平均氣溫
-    avg_humidity NUMERIC,                       -- 平均濕度
-    accumulate_precipitation NUMERIC,           -- 累積降雨量
-    distance NUMERIC,                           -- 水平距離
+    gpx_id VARCHAR(50),
+    current_poi_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
+    next_poi_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
+    current_poi_geo GEOMETRY(Point, 4326),
+    next_poi_geo GEOMETRY(Point, 4326),
+    section_id INT,
+    spend_time NUMERIC,
+    avg_temp NUMERIC,
+    avg_RH NUMERIC,
+    max_precip NUMERIC,
+    distance NUMERIC,
     elevation_range NUMERIC,
-    elevation_change NUMERIC,                   -- 海拔變化
+    elevation_change NUMERIC,
     elevation_gain NUMERIC,
     elevation_loss NUMERIC,
-    high_elevation boolean,
+    high_elevation NUMERIC,
     max_slope_percent NUMERIC,
     max_slope_degrees NUMERIC,
     max_slope_point GEOMETRY(Point, 4326),
-    slope_std_dev NUMERIC,                     -- 坡度標準差
-    slope_variance NUMERIC,                    -- 坡度變異數  
-    slope_freq_dist JSONB,
-    processed_at TIMESTAMPTZ DEFAULT NOW(),
-    feature_version BIGINT                      -- 建立特徵版本便於版本管理與重現實驗
+    slope_std_dev NUMERIC,
+    slope_variance NUMERIC,
+    slope_freq_dist NUMERIC
 );
+
+
 
 CREATE TABLE ml_features.trail_segments(
     id BIGSERIAL PRIMARY KEY,

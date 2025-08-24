@@ -1,7 +1,10 @@
 from flask_restful import Resource, reqparse
 from sqlalchemy import text
-from utils.dbcon import engine
+
+# from utils_tobedelete.dbcon import engine
 from werkzeug.security import generate_password_hash
+
+from common.utils.dbcon import engine
 
 
 class RegisterUser(Resource):

@@ -1,8 +1,6 @@
 import importlib
 
-import utils.dbcon
-
-importlib.reload(utils.dbcon)
+# importlib.reload(utils.dbcon)
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -16,8 +14,12 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import LineString, Point, mapping
 from sqlalchemy import text
-from utils.dbcon import engine
+
+# from utils.dbcon import engine
 from werkzeug.security import generate_password_hash
+
+# import utils.dbcon
+from common.utils.dbcon import engine
 
 
 def main():
