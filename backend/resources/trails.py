@@ -1,11 +1,11 @@
+import json
+
 from flask_restful import Resource
 from geoalchemy2.shape import to_shape
 from shapely.geometry import mapping
 from sqlalchemy import text
-import json
-from common.utils.dbcon import engine
 
-# from utils_tobedelete.dbcon import SessionLocal, engine
+from common.utils.dbcon import engine
 
 
 class Trails(Resource):
@@ -44,32 +44,37 @@ class Trail(Resource):
             with engine.connect() as conn:
                 # 路線與氣象站詳細資料
                 query_sql = """
-                    SELECT 
-                        t.id,
-                        t.trail_name_ch,
-                        t.location_name,
-                        t.permit_required,
-                        t.length_km,
-                        t.elevation_start_m,
-                        t.elevation_end_m,
-                        t.route_geometry,
-                        json_agg(jsonb_build_object(
-                            'station_id', s.id,
-                            'station_code', s.station_code,
-                            'station_name', s.station_name,
-                            'station_geolocation', s.geolocation
-                        )) AS stations
-                    FROM paths.trails t
-                    LEFT JOIN paths.trail_stations ts ON t.id = ts.trail_id
-                    LEFT JOIN weather.stations s ON ts.station_id = s.id
-                    WHERE t.id = :trail_id
-                    GROUP BY t.id;
+                            SELECT 
+                                t.id as trail_id,
+                                t.trail_name_ch,
+                                t.location_name,
+                                t.permit_required,
+                                t.length_km,
+                                t.elevation_start_m,
+                                t.elevation_end_m,
+                                json_agg(jsonb_build_object(
+                                    'station_id', s.id,
+                                    'station_code', s.station_code,
+                                    'station_name', s.station_name,
+                                    'station_geolocation', s.geolocation
+                                )) AS stations
+                            FROM paths.trails t
+                            LEFT JOIN (
+                                SELECT DISTINCT ON (ts.trail_id) *
+                                FROM paths.trail_stations ts
+                                ORDER BY ts.trail_id, ts.priority DESC
+                            ) ts ON t.id = ts.trail_id
+                            LEFT JOIN weather.stations s ON ts.station_id = s.id
+                            WHERE t.id = :trail_id
+                            GROUP BY t.id;
                     """
                 trail = conn.execute(text(query_sql), {"trail_id": id}).first()
                 if not trail:
                     return {"message": "找不到該步道"}, 404
-                
-                stations = json.loads(trail.stations) if trail.stations else []
+
+                station_1 = trail.stations[0]
+
+                # station = json.loads(trail.stations) if trail.stations else []
                 # postgis(wkb) -> shapely(linestring) -> GeoJSON
                 trail_geom = mapping(to_shape(trail.route_geometry))
                 features = []
@@ -88,58 +93,58 @@ class Trail(Resource):
                             "elevation_end_m": f"最高海拔{trail.elevation_end_m} 公尺",
                             "weatherStation": [
                                 {
-                                    "id": stations.station_id,
-                                    "code": stations.station_code,
-                                    "name": stations.station_name,
-                                    "geolocation": stations.geolocation
+                                    "id": station_1.station_id,
+                                    "code": station_1.station_code,
+                                    "name": station_1.station_name,
+                                    "geolocation": station_1.geolocation,
                                 }
                             ],
                         },
                     }
                 )
-                query_sql = """
-                        SELECT 
-                            t.id as trail_id,
-                            t.trail_name_ch as trail_name,
-                            json_agg(
-                                jsonb_build_object(
-                                'poi_id', p.id,
-                                'poi_type', p.poi_type,
-                                'poi_name', p.poi_name,
-                                'poi_geo', p.geolocation,
-                                'poi_order', tp.poi_order,
-                                'description', p.description
-                            )
-                            ORDER BY tp.poi_order
-                        )AS pois
-                        FROM paths.trail_pois tp
-                        LEFT JOIN paths.points_of_interest p on tp.poi_id = p.id  
-                        LEFT JOIN paths.trails t on tp.trail_id = t.id
-                        WHERE t.id = :trail_id
-                        GROUP BY t.id, t.trail_name_ch;
-                """
-                result = conn.execute(text(query_sql), {"trail_id": trail.id}).first()
-                pois_jsonb = result["pois"]
+                # query_sql = """
+                #         SELECT
+                #             t.id as trail_id,
+                #             t.trail_name_ch as trail_name,
+                #             json_agg(
+                #                 jsonb_build_object(
+                #                 'poi_id', p.id,
+                #                 'poi_type', p.poi_type,
+                #                 'poi_name', p.poi_name,
+                #                 'poi_geo', p.geolocation,
+                #                 'poi_order', tp.poi_order,
+                #                 'description', p.description
+                #             )
+                #             ORDER BY tp.poi_order
+                #         )AS pois
+                #         FROM paths.trail_pois tp
+                #         LEFT JOIN paths.points_of_interest p on tp.poi_id = p.id
+                #         LEFT JOIN paths.trails t on tp.trail_id = t.id
+                #         WHERE t.id = :trail_id
+                #         GROUP BY t.id, t.trail_name_ch;
+                # """
+                # result = conn.execute(text(query_sql), {"trail_id": trail.id}).first()
+                # pois_jsonb = result["pois"]
 
-                # 遍歷每個 POI
-                for pt in pois_jsonb:
-                    # 將 geojson 轉成 shapely geometry
-                    pt_geom = mapping(to_shape(pt["poi_geo"]))
-                    features.append(
-                        {
-                            "type": "Feature",
-                            "geometry": pt_geom,
-                            "properties": {
-                                "type": pt.get("poi_type"),
-                                "id": pt.get("poi_id"),
-                                "name": pt.get("poi_name"),
-                                "order": pt.get(
-                                    "poi_order"
-                                ),  # 如果你在 SQL 裡沒選到，可以先填 None
-                                "description": pt.get("description"),  # 同上
-                            },
-                        }
-                    )
+                # # 遍歷每個 POI
+                # for pt in pois_jsonb:
+                #     # 將 geojson 轉成 shapely geometry
+                #     pt_geom = mapping(to_shape(pt["poi_geo"]))
+                #     features.append(
+                #         {
+                #             "type": "Feature",
+                #             "geometry": pt_geom,
+                #             "properties": {
+                #                 "type": pt.get("poi_type"),
+                #                 "id": pt.get("poi_id"),
+                #                 "name": pt.get("poi_name"),
+                #                 "order": pt.get(
+                #                     "poi_order"
+                #                 ),  # 如果你在 SQL 裡沒選到，可以先填 None
+                #                 "description": pt.get("description"),  # 同上
+                #             },
+                #         }
+                #     )
 
                 # point_records = session.query(POIModel).filter_by(trail_id=id).all()
                 # for pt in point_records:

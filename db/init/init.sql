@@ -193,8 +193,9 @@ CREATE TABLE ml_features.time_prediction(
     next_poi_id INT REFERENCES paths.points_of_interest(id) ON DELETE CASCADE,
     current_poi_geo GEOMETRY(Point, 4326),
     next_poi_geo GEOMETRY(Point, 4326),
-    section_id INT,
+    section_id VARCHAR(50),
     spend_time NUMERIC,
+    spend_time_m NUMERIC,
     avg_temp NUMERIC,
     avg_RH NUMERIC,
     max_precip NUMERIC,
@@ -203,14 +204,15 @@ CREATE TABLE ml_features.time_prediction(
     elevation_change NUMERIC,
     elevation_gain NUMERIC,
     elevation_loss NUMERIC,
-    high_elevation NUMERIC,
+    high_elevation boolean,
     max_slope_percent NUMERIC,
     max_slope_degrees NUMERIC,
     max_slope_point GEOMETRY(Point, 4326),
     slope_std_dev NUMERIC,
     slope_variance NUMERIC,
-    slope_freq_dist NUMERIC,
+    slope_freq_dist JSONB,
     accumulated_time NUMERIC,
+    accumulated_time_m NUMERIC,
     accumulated_distance NUMERIC
 );
 

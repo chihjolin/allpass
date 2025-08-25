@@ -1,10 +1,12 @@
-import sys
-print(sys.executable)
-print(sys.path)
-import importlib
+# import sys
+# print(sys.executable)
+# print(sys.path)
+# import importlib
+
+import json
 
 # importlib.reload(utils.dbcon)
-import json
+import os
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -26,7 +28,11 @@ from common.utils.dbcon import engine
 
 
 def main():
-    data_folder = "./init/data"
+    """
+    初始化 PostgreSQL 資料表，匯入 raw data
+    """
+    data_folder = os.path.join(os.path.dirname(__file__), "data")
+    # data_folder = "./init/data"
     excel_path = f"{data_folder}/allpass_data_1.0.3.xlsx"
     tables = get_all_tables(engine)
     imported_tables = insert_data(excel_path, engine)

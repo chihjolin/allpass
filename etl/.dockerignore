@@ -4,3 +4,4 @@ __pycache__
 *.pyd
 .env
 *.db
+init/init_done.flag

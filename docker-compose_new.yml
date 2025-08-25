@@ -34,6 +34,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+ 
+  #ETL 
+  etl:
+    build: 
+      context: .
+      dockerfile: etl/Dockerfile
+    container_name: allpass_etl_container
+    env_file:
+      - ./.env
+    volumes:
+      - ./etl:/app/etl         # 開發時熱更新 ETL 程式碼
+      - ./common:/app/common   # 開發時熱更新 common
+    networks:
+      - allpass-network
+    depends_on:
+      postgis:
+        condition: service_healthy
+    # command: ["python", "-m", "init.init_postgres"]
+    # restart: "no"   # ETL 是一次性 job，跑完就結束
 
   #Backend 服務
   backend:
@@ -80,27 +99,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-
-  #ETL 
-  etl:
-    build: 
-      context: .
-      dockerfile: etl/Dockerfile
-    container_name: allpass_etl_container
-    env_file:
-      - ./.env
-    volumes:
-      - ./etl:/app/etl         # 開發時熱更新 ETL 程式碼
-      - ./common:/app/common   # 開發時熱更新 common
-    networks:
-      - allpass-network
-    depends_on:
-      postgis:
-        condition: service_healthy
-    # command: ["python", "-m", "init.init_postgres"]
-    # restart: "no"   # ETL 是一次性 job，跑完就結束
-
-
   #LLM
   llm:
     build: 
@@ -129,10 +127,6 @@ services:
 
 
   #Training
-
-
-
-
 
 
 
