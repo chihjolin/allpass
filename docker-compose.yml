@@ -35,25 +35,25 @@ services:
       timeout: 5s
       retries: 5
 
-  #ETL:
-  etl:
-    build:
-      context: .
-      dockerfile: etl/Dockerfile
-    container_name: allpass_etl_container
-    env_file:
-      - ./.env
-    volumes:
-      # 熱更新 ETL 程式碼
-      - ./etl:/app/etl
-      # 熱更新 common package
-      - ./common:/app/common
-    networks:
-      - allpass-network
-    depends_on:
-      postgis:
-        condition: service_healthy
-    working_dir: /app
+  # #ETL:
+  # etl:
+  #   build:
+  #     context: .
+  #     dockerfile: etl/Dockerfile
+  #   container_name: allpass_etl_container
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     # 熱更新 ETL 程式碼
+  #     - ./etl:/app/etl
+  #     # 熱更新 common package
+  #     - ./common:/app/common
+  #   networks:
+  #     - allpass-network
+  #   depends_on:
+  #     postgis:
+  #       condition: service_healthy
+  #   working_dir: /app
 
   #Backend 服務
   backend:
@@ -70,8 +70,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      etl:
-        condition: service_completed_successfully   # 等ETL成功才啟動
+      # etl:
+      #   condition: service_completed_successfully   # 等ETL成功才啟動
 
     restart: unless-stopped
     healthcheck:

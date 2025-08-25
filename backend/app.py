@@ -20,7 +20,8 @@ api = Api(app)
 # --- 註冊API ---
 api.add_resource(Health, "/health")  # 健康檢查路由
 api.add_resource(Trails, "/api/trails")
-api.add_resource(Trail, "/api/trails/<string:id>")
+#api.add_resource(Trail, "/api/trails/<string:id>")
+api.add_resource(Trail, "/api/trails/<int:id>")
 api.add_resource(Weather, "/api/weather/<string:location_name>")
 api.add_resource(Tiles, "/api/tiles/download")
 api.add_resource(Predictions, "/api/time")

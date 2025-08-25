@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import Resource
 
-from common.utils.dbcon import engine
+#from common.utils.dbcon import engine
 
 # 取得使用者行進當下時間(推論特徵), 傳給模型並返回模型預測結果
 
