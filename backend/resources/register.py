@@ -1,10 +1,12 @@
 from flask_restful import Resource, reqparse
 from sqlalchemy import text
-from utils_dev.dbcon import engine
-# from utils_tobedelete.dbcon import engine
 from werkzeug.security import generate_password_hash
 
-#from common.utils.dbcon import engine
+# from utils_dev.dbcon import engine
+# from utils_tobedelete.dbcon import engine
+from common.utils.dbcon import engine
+
+# from common.utils.dbcon import engine
 
 
 class RegisterUser(Resource):
@@ -58,4 +60,5 @@ class RegisterUser(Resource):
             }, 201
 
         except Exception as e:
+            return {"error": str(e)}, 400
             return {"error": str(e)}, 400

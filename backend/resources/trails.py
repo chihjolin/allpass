@@ -5,9 +5,9 @@ from geoalchemy2.shape import to_shape
 from shapely.geometry import mapping
 from sqlalchemy import text
 
+from common.utils.dbcon import engine
 
-#from common.utils.dbcon import engine
-from utils_dev.dbcon import engine
+# from utils_dev.dbcon import engine
 
 
 class Trails(Resource):
@@ -80,7 +80,7 @@ class Trail(Resource):
                 # station = json.loads(trail.stations) if trail.stations else []
                 # postgis(wkb) -> shapely(linestring) -> GeoJSON
                 # trail_geom = mapping(to_shape(trail.route_geometry))
-                #trail_geom = mapping(wkt.loads(trail.route_geometry))
+                # trail_geom = mapping(wkt.loads(trail.route_geometry))
                 geom = trail._mapping["route_geometry"]
                 trail_geom = json.loads(geom)
                 features = []
@@ -133,7 +133,7 @@ class Trail(Resource):
                         GROUP BY t.id, t.trail_name_ch;
                 """
                 result = conn.execute(text(query_sql), {"trail_id": trail.id}).first()
-               # 從結果裡拿到 pois
+                # 從結果裡拿到 pois
                 pois = result._mapping["pois"] or []
 
                 # 保險處理：有些 driver 可能把 jsonb 當 str 回傳
@@ -144,7 +144,7 @@ class Trail(Resource):
                 for pt in pois:
                     # 將 geojson 轉成 shapely geometry
                     pt_geom = pt.get("poi_geo")
-                    #pt_geom = mapping(to_shape(pt["poi_geo"]))
+                    # pt_geom = mapping(to_shape(pt["poi_geo"]))
                     features.append(
                         {
                             "type": "Feature",
@@ -156,7 +156,7 @@ class Trail(Resource):
                                 "order": pt.get(
                                     "poi_order"
                                 ),  # 如果你在 SQL 裡沒選到，可以先填 None
-                                "description": pt.get("description"), # 同上
+                                "description": pt.get("description"),  # 同上
                             },
                         }
                     )

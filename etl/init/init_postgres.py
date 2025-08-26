@@ -30,6 +30,7 @@ from common.utils.dbcon import engine
 def main():
     """
     初始化 PostgreSQL 資料表，匯入 raw data
+    返回 True 表示初始化成功
     """
     data_folder = os.path.join(os.path.dirname(__file__), "data")
     # data_folder = "./init/data"
@@ -64,6 +65,8 @@ def main():
     insert_trailseg_features(feature_file, engine)
 
     features = f"{data_folder}/feature_data_new.csv"
+
+    return True  # 表示初始化成功
 
 
 def get_all_tables(engine):

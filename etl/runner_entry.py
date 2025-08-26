@@ -3,10 +3,12 @@ import logging
 import os
 import time
 
-# from etl.init import init_postgres
-# from etl.jobs.runner import main as run_jobs
-from init import init_postgres
-from jobs.runner import main as run_jobs
+from etl.init import init_postgres
+from etl.jobs.runner import main as run_jobs
+
+# from init import init_postgres
+# from jobs.runner import main as run_jobs
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
@@ -20,10 +22,13 @@ def main():
 
     # 1. 初始化資料庫
     logger.info("Starting DB initialization...")
-    init_postgres.main()  # 執行 init/init_postgres.py
-    with open(INIT_FLAG, "w") as f:
-        f.write("done")
-    logger.info("DB initialization complete.")
+    success = init_postgres.main()  # 執行 init/init_postgres.py
+    if success:
+        with open(INIT_FLAG, "w") as f:
+            f.write("done")
+        logger.info("DB initialization complete.")
+    else:
+        logger.error("DB initialization failed, flag not written.")
 
     # # 2. 等待 init 完成 (若未來要支援多個 container 搶同一個 init，就需要保留 loop)
     # while not os.path.exists(INIT_FLAG):
