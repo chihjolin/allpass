@@ -106,6 +106,9 @@ def run_join_features_job():
     df["accumulated_time_m"] = df["accumulated_time"].dt.total_seconds() / 60
     df["accumulated_time_seconds"] = df["accumulated_time"].dt.total_seconds()
 
+    # 處理 high_elevation 布林值
+    df["high_elevation"] = df["high_elevation"].fillna(False).astype(int)
+
     # ===== 8. 創建 GeoDataFrame =====
     # GeoDataFrame 只能有一個 active geometry，我們選 next_poi_geo
     gdf = gpd.GeoDataFrame(df, geometry="next_poi_geo", crs="EPSG:4326")

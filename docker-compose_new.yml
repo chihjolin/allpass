@@ -126,7 +126,19 @@ services:
   #Time_Prediction
 
 
-  #Training
+  training:
+    build: ./training
+    # ... 其他設定 ...
+    volumes:
+      # 把主機的 ./models 資料夾，掛載到 training 容器裡的 /app/models 路徑
+      - ./models:/app/models
+
+  time_prediction: # 這可能是你的其中一個 aiservice
+    build: ./aiservices/time_prediction
+    # ... 其他設定 ...
+    volumes:
+      # 把同一個主機的 ./models 資料夾，也掛載到 aiservice 容器裡的 /app/models 路徑
+      - ./models:/app/models
 
 
 
