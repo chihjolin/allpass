@@ -1,0 +1,4 @@
+# 忽略 training/models 資料夾
+training/models
+*.pyc
+__pycache__/

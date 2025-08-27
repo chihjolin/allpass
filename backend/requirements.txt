@@ -31,3 +31,4 @@ pandas  #測試匯入資料用
 openpyxl #測試匯入資料用
 fastapi
 geopandas
+pydantic

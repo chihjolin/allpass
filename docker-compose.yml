@@ -96,6 +96,43 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  #Training:
+  training:
+    build: 
+      context: .
+      dockerfile: training/Dockerfile
+    container_name: allpass_training_container
+    env_file:
+      - ./.env
+    volumes:
+      - ./models:/app/models
+    networks:
+      - allpass-network
+    depends_on:
+      postgis:
+        condition: service_healthy
+      etl:
+        condition: service_completed_successfully   # 等ETL成功才啟動
+
+  #Time_Prediction
+  time_prediction:
+    build: 
+      context: .
+      dockerfile: aiservices/time_prediction/Dockerfile
+    container_name: allpass_time_prediction_container
+    env_file:
+      - ./.env
+    volumes:
+      - ./models:/app/models:ro #ro (read-only)
+    networks:
+      - allpass-network
+    ports:
+      - "8001:8000"
+    # depends_on:
+    #   training:
+    #     condition: service_completed_successfully # 等training成功才啟動
+
+
 volumes:
   postgis_data:
     name: allpass_postgis_data
