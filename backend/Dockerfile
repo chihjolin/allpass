@@ -21,5 +21,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 WORKDIR /app
 
 # 啟動 backend (Flask API)
-#CMD ["python", "backend/app.py"]
-CMD ["python", "-m", "backend.app"]
+CMD ["python", "backend/app.py"]
+#CMD ["python", "-m", "backend.app"]

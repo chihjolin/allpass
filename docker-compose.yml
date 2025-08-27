@@ -73,7 +73,7 @@ services:
       redis:
         condition: service_started
       etl:
-        condition: service_completed_successfully   # 等ETL成功才啟動
+        condition: service_completed_successfully   # 等ETL成功才啟動      
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1" ]
@@ -127,10 +127,10 @@ services:
     networks:
       - allpass-network
     ports:
-      - "8001:8000"
-    # depends_on:
-    #   training:
-    #     condition: service_completed_successfully # 等training成功才啟動
+      - "${TIME_PREDICTION_HOST_PORT:-8000}:${TIME_PREDICTION_PORT:-8000}"
+    depends_on:
+      training:
+        condition: service_completed_successfully # 等training成功才啟動
 
 
 volumes:

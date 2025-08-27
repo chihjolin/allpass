@@ -1,4 +1,5 @@
 import json
+import os
 
 import requests as req
 from flask import request
@@ -73,15 +74,21 @@ class Predictions(Resource):
                 accumulated_time_seconds=30580,
                 accumulated_distance=9813.28,
             )
-            # data = request.get_json()
-            # 假設data包含必要的特徵
-            # 這裡應該調用模型進行預測
+            TIME_PREDICTION_HOST = os.getenv("TIME_PREDICTION_HOST")
+            TIME_PREDICTION_PORT = os.getenv("TIME_PREDICTION_PORT")
+            #本機開發測試
+            # TIME_PREDICTION_HOST = "localhost"
+            # TIME_PREDICTION_PORT = 8000
+            Request_url = f"http://{TIME_PREDICTION_HOST}:{TIME_PREDICTION_PORT}/predict"
+            print("Request Url:", Request_url)
             response = req.post(
-                "http://localhost:8001/predict", data=json.dumps(features.dict())
+                Request_url,
+                data=json.dumps(features.dict())
             )
             result = response.json()
-            print(result["predicted_spend_time_seconds"])
+            predicted_result = result["predicted_spend_time_seconds"]
+            print("Backend returns: ",predicted_result)
 
-            return {"message": "成功接收預測模型回傳結果"}, 200
+            return {"message": "成功接收預測模型回傳結果", "result": predicted_result}, 200
         except Exception as e:
             return {"message": "伺服器錯誤", "error": str(e)}, 500
