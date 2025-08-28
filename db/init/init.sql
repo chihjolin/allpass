@@ -237,22 +237,32 @@ CREATE TABLE ml_features.trail_segments(
     trail_name_en VARCHAR(100),
     segment_order INT,
     filename VARCHAR(100),
-    poi_previous_id INT,                        -- 前一個poi id
-    poi_current_id INT,                         -- 目前poi id
-    poi_previous_geo GEOMETRY(Point, 4326),     -- 前一個poi地理資訊
-    poi_current_geo GEOMETRY(Point, 4326),      -- 目前poi地理資訊
+    current_poi_id INT,                         -- 前一個poi id
+    next_poi_id INT,                            -- 目前poi id
     distance NUMERIC,                           -- 水平距離
     elevation_range NUMERIC,
     elevation_change NUMERIC,                   -- 海拔變化
     elevation_gain NUMERIC,
     elevation_loss NUMERIC,
-    high_elevation boolean,
+    high_elevation INT,
     max_slope_percent NUMERIC,
     max_slope_degrees NUMERIC,
     max_slope_point GEOMETRY(Point, 4326),
+    max_slope_lat NUMERIC,
+    max_slope_lon NUMERIC,
     slope_std_dev NUMERIC,                     -- 坡度標準差
     slope_variance NUMERIC,                    -- 坡度變異數  
     slope_freq_dist JSONB,
+    slope_neg15 NUMERIC,
+    slope_neg15_neg10 NUMERIC,
+    slope_neg10_neg5 NUMERIC,
+    slope_neg5_neg1 NUMERIC,
+    slope_neg1_1 NUMERIC,
+    slope_1_5 NUMERIC,
+    slope_5_10 NUMERIC,
+    slope_10_15 NUMERIC,
+    slope_over15 NUMERIC,
+    accumulated_distance NUMERIC,
     created_at TIMESTAMPTZ DEFAULT NOW(),      -- 記錄建立時間
     updated_at TIMESTAMPTZ DEFAULT NOW()       -- 記錄更新時間
 );
