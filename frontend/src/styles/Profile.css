@@ -103,3 +103,25 @@
 .profile-pagination-buttons button:hover:not(:disabled) {
     background-color: #00796b;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 10px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+
+    .trail-recommendations {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

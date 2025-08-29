@@ -98,3 +98,20 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .login-page {
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .login-image-container {
+        display: none;
+    }
+
+    .login-form-container {
+        width: 100%;
+        padding: 10px;
+    }
+}

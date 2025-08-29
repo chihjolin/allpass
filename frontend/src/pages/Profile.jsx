@@ -30,9 +30,10 @@ export default function Profile() {
                     if (!res.ok) throw new Error('Network response was not ok');
                     const data = await res.json();
                     setUserRecords(data.map(record => ({
-                        file_id: record.trail_id,
+                        trail_id: record.trail_id,
                         date: record.date,
-                        trail_name: record.file_name
+                        trail_name: record.file_name,
+                        total_length_km: record.total_length_km
                     })));
                 } catch (err) {
                     console.error('Failed to fetch user records:', err);
@@ -89,10 +90,35 @@ export default function Profile() {
                 </div>
 
                 <div className="profile-section">
+                    <h2>個人統計</h2>
+                    <div className="stats-grid">
+                        <div className="stat-item">
+                            <i className="fas fa-hiking"></i>
+                            <div className="label">爬山次數</div>
+                            <div className="value">{userRecords.length}</div>
+                        </div>
+                        <div className="stat-item">
+                            <i className="fas fa-route"></i>
+                            <div className="label">爬山總距離</div>
+                            <div className="value">{
+                                userRecords.reduce((total, record) => total + (record.total_length_km || 0), 0).toFixed(2)
+                            } 公里</div>
+                        </div>
+                        <div className="stat-item">
+                            <i className="fas fa-mountain"></i>
+                            <div className="label">挑戰過的百岳</div>
+                            <div className="value">{
+                                new Set(userRecords.map(record => record.trail_id)).size
+                            }/100</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="profile-section">
                     <h2>過往登山紀錄</h2>
                     <ul className="profile-records">
                         {currentRecords.map(record => (
-                            <li key={record.file_id}>{record.date} {record.trail_name}</li>
+                            <li key={record.trail_id}>{record.date} {record.trail_name}</li>
                         ))}
                     </ul>
                     <div className="profile-pagination-buttons">
@@ -113,6 +139,8 @@ export default function Profile() {
                         綜合而言，您已具備紮實的單攻與中級山經驗，未來若能結合多日縱走、不同季節挑戰及技術訓練，不僅能提升登山實力，也能讓您的登山旅程更加多元與安全。
                     </p>
                 </div>
+
+
 
                 <div className="profile-section">
                     <h2>你可能會喜歡</h2>

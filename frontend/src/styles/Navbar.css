@@ -97,3 +97,10 @@
     margin-top: 5px;
     cursor: pointer;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .plan-title {
+        font-size: 20px !important;
+    }
+}

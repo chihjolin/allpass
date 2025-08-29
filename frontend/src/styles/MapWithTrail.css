@@ -45,3 +45,12 @@
     background-color: #30333328;
     color: white;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .map-container {
+        order: 1;
+        width: 100%;
+        height: 300px;
+    }
+}

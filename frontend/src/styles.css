@@ -594,3 +594,80 @@ h2 {
     height: 100vh;
     width: 100%;
 }
+
+/* --- 響應式設計 --- */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+
+    .home-header {
+        padding: 200px 10px;
+    }
+
+    .home-header-text {
+        font-size: 24px;
+        top: 60%;
+        left: 10%;
+    }
+
+    .trail-grid {
+        margin: 20px;
+        gap: 1rem;
+    }
+
+    .trail-card {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .weather-hourly-forecast {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .weather-card {
+        flex: 0 0 100px;
+        margin: 0.5rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cta-button {
+        text-align: center;
+        width: 90%;
+        margin: 0 auto;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    footer {
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .map-container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        height: 300px;
+    }
+
+    .plan-sidebar {
+        order: 2;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .plan-sidebar,
+    .plan-timeline-display {
+        display: none;
+    }
+}

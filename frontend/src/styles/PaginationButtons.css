@@ -25,3 +25,11 @@
 .profile-pagination-buttons button:hover:not(:disabled) {
     background-color: #00796b;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .profile-pagination-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

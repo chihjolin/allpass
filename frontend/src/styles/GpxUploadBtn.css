@@ -78,3 +78,19 @@
     border-radius: 8px;
     overflow-x: auto;
 }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%;
+        max-height: 80vh;
+    }
+
+    .modal-content .header {
+        padding: 10px;
+    }
+
+    .modal-content .body {
+        padding: 10px;
+    }
+}

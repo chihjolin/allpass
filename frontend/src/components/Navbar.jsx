@@ -54,7 +54,6 @@ export default function Navbar({ alwaysScrolled = false }) {
                     <ul className="navbar-links">
                         <li><Link to="/">首頁</Link></li>
                         <li><Link to="/profile">個人紀錄</Link></li>
-                        <li><Link to="/about">關於我們</Link></li>
                     </ul>
                 </div>
                 <div className="navbar-right">
