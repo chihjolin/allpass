@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
 
+// user: user1@example.com
+// password: password123
+
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -23,7 +26,11 @@ export default function Login() {
             });
 
             const data = await response.json();
-            if (data.success) {
+            if (data.message === "Login successful") {
+                // 登入成功，將 user_id 和 username 存儲到 localStorage
+                localStorage.setItem('user_id', data.data.user_id);
+                localStorage.setItem('username', data.data.username);
+
                 navigate('/'); // 登入成功後導回首頁
             } else {
                 setErrorMessage(data.message || '登入失敗，請檢查您的帳號和密碼。');

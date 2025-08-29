@@ -32,7 +32,7 @@ export default function TrailDetail() {
         const trailRes = await fetch(`/api/trails/${id}`);
         if (!trailRes.ok) throw new Error('Trail not found');
         const trailData = await trailRes.json();
-        
+
         // 從 GeoJSON features 中提取步道基本資訊
         const routeFeature = trailData.features?.find(f => f.geometry.type === 'LineString');
         if (routeFeature) {
@@ -40,13 +40,12 @@ export default function TrailDetail() {
             id: routeFeature.properties.id,
             name: routeFeature.properties.name,
             location: routeFeature.properties.location,
-            difficulty: routeFeature.properties.difficulty,
             permitRequired: routeFeature.properties.permitRequired,
-            stats: routeFeature.properties.stats,
-            weatherStation: routeFeature.properties.weatherStation,
-            distance: routeFeature.properties.stats?.distance,
-            // 儲存完整的 GeoJSON 資料用於地圖顯示
-            geoJsonData: trailData
+            length_km: routeFeature.properties.length_km,
+            elevation_start_m: routeFeature.properties.elevation_start_m.replace('起始海拔', ''),
+            elevation_end_m: routeFeature.properties.elevation_end_m.replace('最高海拔', ''),
+            weatherStation: routeFeature.properties.weatherStation, // Add weather station
+            geoJsonData: trailData // Full GeoJSON for map
           };
           setTrail(trailInfo);
 
@@ -105,7 +104,7 @@ export default function TrailDetail() {
         </section>
       </main>
       <footer>
-        <p>&copy; 2025 登山資訊網. All rights reserved.</p>
+        <p style={{ textAlign: 'center' }}>&copy; 2025 登山資訊網. All rights reserved.</p>
       </footer>
     </>
   );

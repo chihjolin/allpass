@@ -75,7 +75,8 @@ export default function PredictBtn({ onResult, trailId, currentTimelineData }) {
                         trailId: trailId,
                         id,
                         order,
-                        time // 將當下的時間加入到 POST 請求的 body 中
+                        time, // 將當下的時間加入到 POST 請求的 body 中
+                        user_id: localStorage.getItem('user_id')
                     })
                 });
 

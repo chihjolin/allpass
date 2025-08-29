@@ -1,25 +1,79 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Profile.css';
 import Navbar from '../components/Navbar';
 import TrailCard from '../components/TrailCard';
 
 export default function Profile() {
     const [recommendedTrails, setRecommendedTrails] = useState([]);
+    const [userRecords, setUserRecords] = useState([]); // 用於存儲用戶登山紀錄
+    const [username, setUsername] = useState(null); // 用於存儲用戶名稱
+    const [currentPage, setCurrentPage] = useState(1);
+    const recordsPerPage = 5;
+    const navigate = useNavigate();
 
     useEffect(() => {
-        async function fetchRecommendedTrails() {
-            try {
-                const res = await fetch('/api/recommended-trails');
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
-                setRecommendedTrails(data.trails);
-            } catch (err) {
-                console.error('Failed to fetch recommended trails:', err);
-            }
-        }
+        // 檢查 localStorage 是否有登入資訊
+        const storedUsername = localStorage.getItem('username');
+        const userId = localStorage.getItem('user_id');
 
-        fetchRecommendedTrails();
-    }, []);
+        if (!storedUsername || !userId) {
+            // 如果沒有登入，跳轉到登入頁面
+            navigate('/login');
+        } else {
+            setUsername(storedUsername);
+
+            // 呼叫 /api/user-record/:id 獲取用戶登山紀錄
+            async function fetchUserRecords() {
+                try {
+                    const res = await fetch(`/api/user-record/${userId}`);
+                    if (!res.ok) throw new Error('Network response was not ok');
+                    const data = await res.json();
+                    setUserRecords(data.map(record => ({
+                        file_id: record.trail_id,
+                        date: record.date,
+                        trail_name: record.file_name
+                    })));
+                } catch (err) {
+                    console.error('Failed to fetch user records:', err);
+                }
+            }
+
+            fetchUserRecords();
+        }
+    }, [navigate]);
+
+    // useEffect(() => {
+    //     async function fetchRecommendedTrails() {
+    //         try {
+    //             const res = await fetch('/api/recommended-trails');
+    //             if (!res.ok) throw new Error('Network response was not ok');
+    //             const data = await res.json();
+    //             setRecommendedTrails(data.trails);
+    //         } catch (err) {
+    //             console.error('Failed to fetch recommended trails:', err);
+    //         }
+    //     }
+
+    //     fetchRecommendedTrails();
+    // }, []);
+
+    const indexOfLastRecord = currentPage * recordsPerPage;
+    const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+    const currentRecords = userRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+    const totalPages = Math.ceil(userRecords.length / recordsPerPage);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     return (
         <>
@@ -31,33 +85,33 @@ export default function Profile() {
                         alt="User Avatar"
                         className="profile-avatar"
                     />
-                    <h1 className="profile-username">Dora</h1>
-                </div>
-
-                <div className="profile-section">
-                    <h2>登山建議報告</h2>
-                    <p className="profile-report">
-                        本次路線為中級山行程，總長約 9 公里，累積爬升超過 900 公尺。依據地形特徵與氣象資料，本路線屬於「中高挑戰等級」，適合具備一定登山經驗與體能的隊伍進行。
-
-                        首先，路線前半段多為林道與緩坡，適合作為熱身，但需注意部分地段潮濕泥濘，建議穿著具止滑功能的登山鞋。進入中後段後，坡度明顯增加，連續上坡對心肺與腿部肌力有較高要求，隊員應確保能維持穩定步伐，避免急行導致體能消耗過快。依據過往紀錄，平均完登時間約 6–7 小時，若攜帶大背包或遇上天氣不佳，時間可能延長至 8 小時以上。
-
-                        氣象部分，根據近期預測，午後山區可能有短暫雷陣雨。建議於上午早些出發，以降低午後天氣不穩定的風險。請務必攜帶雨具與防水背包套，並準備一套乾燥衣物，以免因淋雨造成失溫風險。山區氣溫落差大，即便夏季日間炎熱，夜間仍可能低至 10–12 度，建議攜帶輕量保暖衣物。
-
-                        安全方面，路線中段有數處崩塌邊坡與窄稜，通過時務必專注腳步，並保持隊伍間適當間距。若近期降雨，需特別注意落石與路徑濕滑。強烈建議攜帶頭盔、登山杖，以及基本急救裝備。
-
-                        補給部分，沿途缺乏穩定水源，僅少數溪流可取水，建議至少攜帶 2–3 公升飲水，並備有濾水裝置或淨水錠。同時，應攜帶高熱量行動糧，如能量棒、堅果、巧克力等，以補充長時間行進所需能量。
-
-                        最後，請事先規劃撤退點與替代方案，並將行程告知家人或友人。若有隊員出現高山症或嚴重疲勞，務必果斷折返。登山是一場與自然的協商，保持謹慎與彈性，才能確保安全與愉快的山行體驗。
-                    </p>
+                    <h1 className="profile-username">{username}</h1>
                 </div>
 
                 <div className="profile-section">
                     <h2>過往登山紀錄</h2>
                     <ul className="profile-records">
-                        <li>2025-08-01 玉山主峰</li>
-                        <li>2025-07-15 合歡山北峰</li>
-                        <li>2025-06-20 桃山瀑布</li>
+                        {currentRecords.map(record => (
+                            <li key={record.file_id}>{record.date} {record.trail_name}</li>
+                        ))}
                     </ul>
+                    <div className="profile-pagination-buttons">
+                        <button onClick={handlePrevPage} disabled={currentPage === 1}>上一頁</button>
+                        <button onClick={handleNextPage} disabled={currentPage === totalPages}>下一頁</button>
+                    </div>
+                </div>
+
+                <div className="profile-section">
+                    <h2>登山建議報告</h2>
+                    <p className="profile-report">
+                        未來建議可考慮安排連續多日的縱走行程，例如合歡北峰－石門山－奇萊南華等，藉由多天路線累積經驗，培養在山區過夜的技能與適應能力。同時，若打算再次挑戰玉山或雪山主峰，建議嘗試不同季節登頂，如冬季的雪季路線，不僅視野壯闊，也能加強冰雪地形的技術應變能力，但必須搭配冰爪、冰斧等裝備與相關訓練。
+
+                        其次，從紀錄來看，大部分行程集中在台灣百岳的熱門山域。未來可嘗試較少人踏足的中級山或郊山，像是大霸尖山周邊群峰或能高安東軍縱走，這些路線兼具挑戰與探索性，有助於拓展登山視野。此外，您可透過參加登山社團、山難防救課程或野外急救訓練，提升團隊合作與緊急應變能力，對於長期累積登山經驗非常關鍵。
+
+                        最後，隨著登山頻率增加，建議定期檢視個人體能與裝備。保持有氧與重量訓練，以維持登山時的續航力與背負能力；裝備上則可逐步升級輕量化器材，減少長程行走的體力消耗。
+
+                        綜合而言，您已具備紮實的單攻與中級山經驗，未來若能結合多日縱走、不同季節挑戰及技術訓練，不僅能提升登山實力，也能讓您的登山旅程更加多元與安全。
+                    </p>
                 </div>
 
                 <div className="profile-section">
