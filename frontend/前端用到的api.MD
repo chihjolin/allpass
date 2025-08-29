@@ -16,3 +16,11 @@
 
 1. **登入功能簡化設想?**：
    - 登入的時候前端localstorage記下帳號(user_id)，在profile頁面發請求的時候帶user_id，後端就可以拿user_id撈相關資料回傳前端。登出時清除
+
+
+
+/api/prediction.
+trail_id
+poi_id
+order
+time
