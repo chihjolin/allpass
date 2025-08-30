@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 # 讀取 .env 設定(僅開發測試用)
-load_dotenv(override=True)
-# dotenv_path = Path(__file__).parent / ".env"
-# load_dotenv(dotenv_path=dotenv_path, override=True)
+# load_dotenv(override=True)
+dotenv_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=dotenv_path, override=True)
 
 
 # 組合連線字串

@@ -33,7 +33,7 @@ export default function Profile() {
                         trail_id: record.trail_id,
                         date: record.date,
                         trail_name: record.file_name,
-                        total_length_km: record.total_length_km
+                        length_km: record.length_km
                     })));
                 } catch (err) {
                     console.error('Failed to fetch user records:', err);
@@ -101,7 +101,7 @@ export default function Profile() {
                             <i className="fas fa-route"></i>
                             <div className="label">爬山總距離</div>
                             <div className="value">{
-                                userRecords.reduce((total, record) => total + (record.total_length_km || 0), 0).toFixed(2)
+                                userRecords.reduce((total, record) => total + (record.length_km || 0), 0).toFixed(2)
                             } 公里</div>
                         </div>
                         <div className="stat-item">
