@@ -8,6 +8,7 @@ CREATE SCHEMA IF NOT EXISTS paths;      -- 存放官方/預定義的路徑資料
 CREATE SCHEMA IF NOT EXISTS user_gpx;   -- 存放使用者上傳的 GPX 軌跡資料
 CREATE SCHEMA IF NOT EXISTS weather;    -- 存放天氣相關的觀測資料
 CREATE SCHEMA IF NOT EXISTS ml_features; -- 存放特徵
+CREATE SCHEMA IF NOT EXISTS ml_inference; --推論紀錄
 
 -------------------------------------
 --- Schema: paths (官方路徑資料)
@@ -267,6 +268,49 @@ CREATE TABLE ml_features.trail_segments(
     updated_at TIMESTAMPTZ DEFAULT NOW()       -- 記錄更新時間
 );
 
+
+-------------------------------------
+-- 建立推論紀錄表(暫定, 待修)
+-------------------------------------
+-- 推論紀錄（線上寫）
+CREATE TABLE IF NOT EXISTS ml_inference.predictions (
+  id BIGSERIAL PRIMARY KEY,
+  session_uuid UUID NOT NULL,
+  trail_id INT NOT NULL,
+  user_id INT NOT NULL,
+  ts TIMESTAMPTZ NOT NULL DEFAULT now(),
+  features JSONB NOT NULL,
+  y_pred DOUBLE PRECISION NOT NULL,
+  model_name TEXT NOT NULL,
+  model_version TEXT NOT NULL,  -- 或 stage + version
+  request_id UUID NOT NULL,
+  UNIQUE(request_id)
+);
+
+-- 真實標籤（到站時寫入）
+CREATE TABLE IF NOT EXISTS ml_inference.labels (
+  id BIGSERIAL PRIMARY KEY,
+  session_uuid UUID NOT NULL,
+  trail_id INT NOT NULL,
+  user_id INT NOT NULL,
+  ts TIMESTAMPTZ NOT NULL,
+  y_actual DOUBLE PRECISION NOT NULL,
+  request_id UUID NOT NULL  -- 關聯哪次預測
+);
+
+-- 聚合評估指標（計算任務寫）
+CREATE TABLE IF NOT EXISTS ml_inference.eval_metrics (
+  id BIGSERIAL PRIMARY KEY,
+  metric_date DATE NOT NULL,
+  model_version TEXT NOT NULL,
+  r2 DOUBLE PRECISION,
+  rmse DOUBLE PRECISION,
+  sample_size INT,
+  computed_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(metric_date, model_version)
+);
+
+
 -------------------------------------
 -- 建立關聯表
 -------------------------------------
@@ -291,7 +335,6 @@ CREATE TABLE paths.trail_stations(
     updated_at TIMESTAMPTZ DEFAULT NOW(),            -- 記錄更新時間，預設為當前時間帶時區
     CONSTRAINT trail_station_unique UNIQUE (trail_id, station_id)            
 );
-
 
 -------------------------------------
 --- 建立索引以優化查詢效能
