@@ -161,6 +161,16 @@ services:
       etl:
         condition: service_completed_successfully   # 等ETL成功才啟動
 
+  mlflow:
+    build: ./services/mlflow
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./services/mlflow/data:/mlflow
+    restart: always
+  
+
 
 
   time_prediction: # 這可能是你的其中一個 aiservice

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+    mlflow:
+      #build: ./services/mlflow
+      build: .
+      container_name: mlflow_server
+      ports:
+        - "5000:5000"
+      volumes:
+        - ./services/mlflow/data:/mlflow
+      restart: always
+
