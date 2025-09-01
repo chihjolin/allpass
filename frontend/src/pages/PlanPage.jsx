@@ -7,6 +7,7 @@ import GpxUploadBtn from '../components/GpxUploadBtn';
 
 // PlanPage 組件：提供 GPX 檔案上傳與地圖展示功能
 export default function PlanPage() {
+  const mapRef = useRef();
   const { id } = useParams(); // 取得步道 id，方便返回詳情頁
   const [selectedTrail, setSelectedTrail] = useState(null); // 從 localStorage 取得的選擇步道
   const [trailName, setTrailName] = useState('路線規劃與分析');
@@ -131,6 +132,7 @@ export default function PlanPage() {
         {/* Main map area */}
         <div className="plan-map-area">
           <MapWithTrail
+            ref={mapRef}
             trailId={id}
             style={{ height: '100%', width: '100%', borderRadius: 0, boxShadow: 'none' }}
             shouldAutoZoom={!mapInitialized}

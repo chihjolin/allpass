@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/MapWithTrail.css';
@@ -37,8 +37,41 @@ function AdjustMapView({ routeFeatures, pointFeatures }) {
 }
 
 // MapWithTrail 組件：顯示特定步道的地圖
-export default function MapWithTrail({ trail, trailId, style = { height: '400px', width: '100%' }, shouldAutoZoom = true, onMapReady }) {
+const MapWithTrail = forwardRef(({ trail, trailId, style = { height: '400px', width: '100%' }, shouldAutoZoom = true, onMapReady }, ref) => {
   const [trailData, setTrailData] = React.useState(null);
+  const mapRef = React.useRef();
+
+  useImperativeHandle(ref, () => ({
+    getVisibleTiles: () => {
+      const map = mapRef.current;
+      if (!map) return [];
+
+      const bounds = map.getBounds();
+      const zoom = map.getZoom();
+      const tiles = [];
+
+      const tileSize = 256;
+      const scale = Math.pow(2, zoom);
+
+      const nwTile = {
+        x: Math.floor((bounds.getWest() + 180) / 360 * scale),
+        y: Math.floor((1 - Math.log(Math.tan(bounds.getNorth() * Math.PI / 180) + 1 / Math.cos(bounds.getNorth() * Math.PI / 180)) / Math.PI) / 2 * scale),
+      };
+
+      const seTile = {
+        x: Math.floor((bounds.getEast() + 180) / 360 * scale),
+        y: Math.floor((1 - Math.log(Math.tan(bounds.getSouth() * Math.PI / 180) + 1 / Math.cos(bounds.getSouth() * Math.PI / 180)) / Math.PI) / 2 * scale),
+      };
+
+      for (let x = nwTile.x; x <= seTile.x; x++) {
+        for (let y = nwTile.y; y <= seTile.y; y++) {
+          tiles.push({ z: zoom, x, y });
+        }
+      }
+
+      return tiles;
+    },
+  }));
 
   // 獲取步道路線資料
   useEffect(() => {
@@ -67,7 +100,7 @@ export default function MapWithTrail({ trail, trailId, style = { height: '400px'
   }, [trailData]);
 
   return (
-    <MapContainer style={style} center={[24.4, 121.3]} zoom={16}>
+    <MapContainer ref={mapRef} style={style} center={[24.4, 121.3]} zoom={16}>
       <LayersControl position="topright">
         <LayersControl.BaseLayer checked name="OpenStreetMap">
           <TileLayer
@@ -114,4 +147,6 @@ export default function MapWithTrail({ trail, trailId, style = { height: '400px'
       ))}
     </MapContainer>
   );
-}
+});
+
+export default MapWithTrail;

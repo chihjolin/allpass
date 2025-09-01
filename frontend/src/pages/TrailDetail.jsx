@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { openDB } from 'idb';
+import JSZip from 'jszip';
 import StatsGrid from '../components/StatsGrid';
 import WeatherCard from '../components/WeatherCard';
 import MapWithTrail from '../components/MapWithTrail';
@@ -11,6 +13,7 @@ export default function TrailDetail() {
   const [weather, setWeather] = useState([]); // 天氣預報陣列
   const [error, setError] = useState(null); // 錯誤訊息
   const [selectedTrail, setSelectedTrail] = useState(null); // 從 localStorage 取得的選擇步道
+  const mapRef = useRef();
 
   useEffect(() => {
     // 從 localStorage 取得選擇的步道資料
@@ -32,7 +35,7 @@ export default function TrailDetail() {
         const trailRes = await fetch(`/api/trails/${id}`);
         if (!trailRes.ok) throw new Error('Trail not found');
         const trailData = await trailRes.json();
-        
+
         // 從 GeoJSON features 中提取步道基本資訊
         const routeFeature = trailData.features?.find(f => f.geometry.type === 'LineString');
         if (routeFeature) {
@@ -40,13 +43,12 @@ export default function TrailDetail() {
             id: routeFeature.properties.id,
             name: routeFeature.properties.name,
             location: routeFeature.properties.location,
-            difficulty: routeFeature.properties.difficulty,
             permitRequired: routeFeature.properties.permitRequired,
-            stats: routeFeature.properties.stats,
-            weatherStation: routeFeature.properties.weatherStation,
-            distance: routeFeature.properties.stats?.distance,
-            // 儲存完整的 GeoJSON 資料用於地圖顯示
-            geoJsonData: trailData
+            length_km: routeFeature.properties.length_km,
+            elevation_start_m: routeFeature.properties.elevation_start_m.replace('起始海拔', ''),
+            elevation_end_m: routeFeature.properties.elevation_end_m.replace('最高海拔', ''),
+            weatherStation: routeFeature.properties.weatherStation, // Add weather station
+            geoJsonData: trailData // Full GeoJSON for map
           };
           setTrail(trailInfo);
 
@@ -65,6 +67,51 @@ export default function TrailDetail() {
     }
     load();
   }, [id]);
+
+  async function saveTilesToIndexedDB(zip) {
+    const db = await openDB('tiles-db', 1, {
+      upgrade(db) {
+        db.createObjectStore('tiles');
+      },
+    });
+
+    const keys = Object.keys(zip.files);
+
+    for (const key of keys) {
+      const tileBlob = await zip.files[key].async('blob');
+      await db.put('tiles', tileBlob, key);
+    }
+
+    console.log('圖磚已保存到 IndexedDB');
+  }
+
+  async function handleDownloadTiles(trailId) {
+    const visibleTiles = mapRef.current?.getVisibleTiles();
+
+    if (!visibleTiles || visibleTiles.length === 0) {
+      alert('無法取得可見圖磚，請稍後再試！');
+      return;
+    }
+
+    const response = await fetch(`/api/tiles/download`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ tiles: visibleTiles }),
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const zip = await JSZip.loadAsync(blob);
+      await saveTilesToIndexedDB(zip);
+      alert('圖磚下載完成，可離線使用！');
+    } else {
+      const error = await response.json();
+      console.error('下載圖磚失敗:', error);
+      alert('下載圖磚失敗，請稍後再試！');
+    }
+  }
 
   if (error) {
     return <p>載入步道資料時發生錯誤：{error}</p>;
@@ -85,15 +132,22 @@ export default function TrailDetail() {
         <section className="stats-section">
           <div className="section-header">
             <h2>路線資訊</h2>
-            <Link to={`/plan/${trail.id}`} className="cta-button">
-              <i className="fa-solid fa-calculator"></i> 路線時間規劃
-            </Link>
+            <button
+              className="cta-button"
+              onClick={() => {
+                handleDownloadTiles(id);
+              }}
+            >
+              <Link to={`/plan/${trail.id}`} className='cta-button'>
+                <i className="fa-solid fa-calculator"></i> 路線時間規劃
+              </Link>
+            </button>
           </div>
           <StatsGrid trail={trail} />
         </section>
         <section className="map-section">
           <h2>步道位置</h2>
-          <MapWithTrail trailId={trail.id} style={{ height: '400px', width: '100%' }} />
+          <MapWithTrail ref={mapRef} trailId={trail.id} style={{ height: '400px', width: '100%' }} />
         </section>
         <section className="weather-section">
           <h2>每小時天氣預報</h2>
@@ -105,7 +159,7 @@ export default function TrailDetail() {
         </section>
       </main>
       <footer>
-        <p>&copy; 2025 登山資訊網. All rights reserved.</p>
+        <p style={{ textAlign: 'center' }}>&copy; 2025 登山資訊網. All rights reserved.</p>
       </footer>
     </>
   );

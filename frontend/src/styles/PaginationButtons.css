@@ -1,0 +1,35 @@
+/* Pagination Buttons */
+.profile-pagination-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.profile-pagination-buttons button {
+    padding: 8px 16px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #00796b;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.profile-pagination-buttons button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.profile-pagination-buttons button:hover:not(:disabled) {
+    background-color: #00796b;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .profile-pagination-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

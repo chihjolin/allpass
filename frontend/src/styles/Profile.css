@@ -74,3 +74,54 @@
     justify-content: space-between;
     margin-top: 20px;
 }
+
+/* 上下頁按鈕
+/* Pagination Buttons */
+.profile-pagination-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.profile-pagination-buttons button {
+    padding: 8px 16px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #00796b;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.profile-pagination-buttons button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.profile-pagination-buttons button:hover:not(:disabled) {
+    background-color: #00796b;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 10px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+
+    .trail-recommendations {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

@@ -204,20 +204,24 @@
 
 /* 響應式設計 */
 @media (max-width: 768px) {
+    .timeline-container {
+        padding: 10px;
+    }
+
     .timeline-point {
         min-width: 60px;
         margin-right: 0.8rem;
     }
 
     .timeline-circle {
-        width: 40px;
-        height: 40px;
-        font-size: 0.9rem;
+        width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
     }
 
     .timeline-time {
-        font-size: 0.8rem;
-        padding: 5px 10px;
+        font-size: 0.7rem;
+        padding: 5px 8px;
     }
 
     .timeline-location h4 {

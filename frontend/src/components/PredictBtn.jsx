@@ -60,12 +60,6 @@ export default function PredictBtn({ onResult, trailId, currentTimelineData }) {
             // 獲取當下的時間
             const time = new Date().toISOString();
 
-            console.log("要傳送的 data:", {
-                trailId: trailId,
-                id,
-                order,
-                time
-            });
 
             try {
                 const res = await fetch('/api/predictions', {
@@ -75,9 +69,18 @@ export default function PredictBtn({ onResult, trailId, currentTimelineData }) {
                         trailId: trailId,
                         id,
                         order,
-                        time // 將當下的時間加入到 POST 請求的 body 中
+                        time, // 將當下的時間加入到 POST 請求的 body 中
+                        user_id: localStorage.getItem('user_id')
                     })
                 });
+
+                // console.log("要傳送的 data:", {
+                //     trailId: trailId,
+                //     id,
+                //     order,
+                //     time,
+                //     user_id: localStorage.getItem('user_id')
+                // });
 
                 if (!res.ok) {
                     throw new Error(`API 請求失敗: ${res.status}`);

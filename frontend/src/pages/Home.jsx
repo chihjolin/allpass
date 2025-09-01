@@ -8,7 +8,17 @@ import Navbar from '../components/Navbar';
 export default function Home() {
   const [trails, setTrails] = useState([]); // 存放步道陣列
   const [error, setError] = useState(null); // 錯誤訊息
+  const [username, setUsername] = useState(null); // 用於存儲用戶名稱
+
   const navigate = useNavigate();
+
+  // 檢查 localStorage 是否有登入資訊
+  useEffect(() => {
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
 
   // 元件掛載後向後端取得步道資料
   useEffect(() => {
@@ -57,7 +67,11 @@ export default function Home() {
       >
         <div className='home-header-text'>
           <h1>All 爬ss</h1>
-          <p>探索台灣步道</p>
+          {username ? (
+            <p>歡迎回來 {username}!</p>
+          ) : (
+            <p>探索台灣步道</p>
+          )}
         </div>
       </motion.header>
       <main>
@@ -71,7 +85,7 @@ export default function Home() {
           ))}
         </div>
       </main>
-      <footer>
+      <footer style={{ textAlign: 'center' }}>
         <p>&copy; 2025 登山資訊網. All rights reserved.</p>
       </footer>
     </>

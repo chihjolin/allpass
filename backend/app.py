@@ -10,6 +10,7 @@ from resources.register import RegisterUser
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
 from resources.weather import Weather
+from resources.profile import Profile
 
 # from backend.resources.health import Health
 # from backend.resources.login import Login
@@ -18,7 +19,7 @@ from resources.weather import Weather
 # from backend.resources.tiles import Tiles
 # from backend.resources.trails import Trail, Trails
 # from backend.resources.weather import Weather
-
+# from backend.resources.profile import Profile
 
 # --- 初始化 Flask App  ---
 app = Flask(__name__)
@@ -36,6 +37,7 @@ api.add_resource(Tiles, "/api/tiles/download")
 api.add_resource(Predictions, "/api/predictions")
 api.add_resource(RegisterUser, "/api/register")
 api.add_resource(Login, "/api/login")
+api.add_resource(Profile, "/api/user-record/<int:id>")
 
 
 # 測試一下
