@@ -15,7 +15,7 @@ url = f"{base_url}/{endpoint}"
 class Weather(Resource):
     def get(self, location_name):
         # 測試用(新北市)
-        location_name = "臺中市"
+        # location_name = "臺中市"
         params = {
             "Authorization": CWA_API_KEY,
             "format": "JSON",

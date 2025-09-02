@@ -6,6 +6,7 @@ import time
 from etl.init import init_postgres
 from etl.jobs.runner import main as run_jobs
 
+# 本機測試用
 # from init import init_postgres
 # from jobs.runner import main as run_jobs
 

@@ -434,8 +434,8 @@ def insert_trailseg_features(feature_file, engine):
         "route_folder": "trail_name_en",
         "filename": "filename",
         "part_number": "segment_order",
-        "poi_previous_id": "poi_previous_id",
-        "poi_current_id": "poi_current_id",
+        "poi_previous_id": "current_poi_id",
+        "poi_current_id": "next_poi_id",
         "distance": "distance",
         "elevation_range": "elevation_range",
         "elevation_change": "elevation_change",
@@ -448,6 +448,7 @@ def insert_trailseg_features(feature_file, engine):
         "slope_std": "slope_std_dev",
         "slope_vari": "slope_variance",
         "slope_freq_dist": "slope_freq_dist",
+        "accumulated_distance": "accumulated_distance",
     }
 
     df = df.rename(columns=column_mapping)
@@ -468,19 +469,40 @@ def insert_trailseg_features(feature_file, engine):
         lat, lon = map(float, raw_point.split(","))
         return Point(lon, lat)
 
+    # ===== 5. 分別記錄max_slope_lat/lon以及max_slope_point 轉 shapely =====
+    df["max_slope_lat"] = df["max_slope_point"].str.extract(r"\(([^,]+),").astype(float)
+    df["max_slope_lon"] = (
+        df["max_slope_point"].str.extract(r",\s*([^)]+)\)").astype(float)
+    )
     df["max_slope_point"] = df["max_slope_point"].apply(parse_point)
     # df.loc[:4, "geometry"]
 
     # ===== 4. slope_freq_dist → JSONB =====
-    # 1. 先把字串轉成 dict
+    # slope_freq_dist 字串（轉換為數值特徵）
+    slope_dist = df["slope_freq_dist"].str.extract(
+        r"'<-15°': ([^,]+), '-15°~-10°': ([^,]+), '-10°~-5°': ([^,]+), '-5°~-1°': ([^,]+), '-1°~1°': ([^,]+), '1°~5°': ([^,]+), '5°~10°': ([^,]+), '10°~15°': ([^,]+), '>15°': ([^}]+)"
+    )
+    df["slope_neg15"] = slope_dist[0].astype(float)
+    df["slope_neg15_neg10"] = slope_dist[1].astype(float)
+    df["slope_neg10_neg5"] = slope_dist[2].astype(float)
+    df["slope_neg5_neg1"] = slope_dist[3].astype(float)
+    df["slope_neg1_1"] = slope_dist[4].astype(float)
+    df["slope_1_5"] = slope_dist[5].astype(float)
+    df["slope_5_10"] = slope_dist[6].astype(float)
+    df["slope_10_15"] = slope_dist[7].astype(float)
+    df["slope_over15"] = slope_dist[8].astype(float)
+    # (1) 先把字串轉成 dict
     df["slope_freq_dist"] = df["slope_freq_dist"].apply(
         lambda x: json.loads(x.replace("'", '"')) if isinstance(x, str) else None
     )
 
-    # 2. 確保 insert 前再轉成 JSON 字串
+    # (2) 確保 insert 前再轉成 JSON 字串
     df["slope_freq_dist"] = df["slope_freq_dist"].apply(
         lambda x: json.dumps(x) if x is not None else None
     )
+
+    # 處理 high_elevation 布林值
+    df["high_elevation"] = df["high_elevation"].fillna(False).astype(int)
 
     # ===== 5. GeoDataFrame =====
     gdf = gpd.GeoDataFrame(df, geometry="max_slope_point", crs="EPSG:4326")

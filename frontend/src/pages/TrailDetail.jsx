@@ -53,8 +53,15 @@ export default function TrailDetail() {
           setTrail(trailInfo);
 
           // 取得天氣預報資料
-          if (trailInfo.weatherStation?.locationName) {
-            const weatherRes = await fetch(`/api/weather/${trailInfo.weatherStation.locationName}`);
+          // weatherStation 是陣列，取第一個 name 作為查詢參數
+          let station = null;
+          if (Array.isArray(trailInfo.weatherStation) && trailInfo.weatherStation.length > 0) {
+            station = trailInfo.weatherStation[0];
+          } else if (trailInfo.weatherStation) {
+            station = trailInfo.weatherStation;
+          }
+          if (station && station.name) {
+            const weatherRes = await fetch(`/api/weather/${station.name}`);
             if (weatherRes.ok) {
               const weatherData = await weatherRes.json();
               setWeather(weatherData);
@@ -150,7 +157,7 @@ export default function TrailDetail() {
           <MapWithTrail ref={mapRef} trailId={trail.id} style={{ height: '400px', width: '100%' }} />
         </section>
         <section className="weather-section">
-          <h2>每小時天氣預報</h2>
+          <h2>天氣預報</h2>
           <div className="weather-hourly-forecast">
             {weather.map((entry, idx) => (
               <WeatherCard key={idx} entry={entry} />

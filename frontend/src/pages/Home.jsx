@@ -27,7 +27,8 @@ export default function Home() {
         const res = await fetch('/api/trails');
         if (!res.ok) throw new Error('Network response was not ok');
         const json = await res.json();
-        setTrails(json.trails);
+        // 持有品田 持有桃山 沒有詳細步道資料 先濾掉
+        setTrails(json.trails.filter(trail => trail.id !== 4 && trail.id !== 5));
       } catch (err) {
         // 將錯誤訊息記錄於 state 以便顯示在畫面上
         setError(err.message);
