@@ -11,3 +11,6 @@ kernel/
 node_modules
 
 tttt.ipynb
+
+#services
+services/airflow/logs/
