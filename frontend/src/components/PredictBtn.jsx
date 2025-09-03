@@ -82,11 +82,11 @@ export default function PredictBtn({ onResult, trailId, currentTimelineData }) {
                 //     user_id: localStorage.getItem('user_id')
                 // });
 
-                if (!res.ok) {
-                    throw new Error(`API 請求失敗: ${res.status}`);
-                }
+                // if (!res.ok) {
+                //     throw new Error(`API 請求失敗: ${res.status}`);
+                // }
 
-                const apiResult = await res.json();
+                // const apiResult = await res.json();
 
                 // 建立當前點的 timeline 項目
                 const baseTime = new Date();
@@ -105,7 +105,7 @@ export default function PredictBtn({ onResult, trailId, currentTimelineData }) {
                     type: currentIndex === 0 ? 'start' : (currentIndex === pointFeatures.length - 1 ? 'end' : 'waypoint'),
                     originalPoint: point,
                     predicted: true,
-                    apiResponse: apiResult // 每個點的 API 結果也存起來
+                    // apiResponse: apiResult // 每個點的 API 結果也存起來
                 };
 
                 // 更新 timeline 狀態
