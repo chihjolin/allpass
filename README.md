@@ -87,18 +87,18 @@
 
 ```mermaid
 flowchart TD
-    A[資料收集 Data Collection] -->|GPX 上傳 / 爬蟲| B[資料處理 Data Processing]
-    B -->|清洗、特徵工程| C[特徵存放 Feature Store]
-    C -->|Feast (結構化)| C1[Milvus (向量特徵)]
-    C --> D[模型訓練 Model Training]
-    D -->|MLflow Logging| E[模型管理 Model Registry]
-    E -->|版本管理/審批| F[模型部署 Model Serving]
-    F -->|REST API / Docker 容器| G[即時預測 Online Inference]
-    G -->|回寫快取| H[Redis Online Store]
-    G -->|監控數據| I[監控與告警 Monitoring & Alerting]
-    I -->|效能指標| J[Prometheus + Grafana]
-    I -->|錯誤日誌| K[Sentry + Loki]
-    I -->|異常通知| L[AlertManager]
+    A["資料收集 Data Collection"] -->|GPX 上傳 / 爬蟲| B["資料處理 Data Processing"]
+    B -->|清洗、特徵工程| C["特徵存放 Feature Store"]
+    C -->|Feast| C1["Milvus 特徵向量庫"]
+    C --> D["模型訓練 Model Training"]
+    D -->|MLflow Logging| E["模型管理 Model Registry"]
+    E -->|版本管理 / 審批| F["模型部署 Model Serving"]
+    F -->|REST API / Docker 容器| G["即時預測 Online Inference"]
+    G -->|回寫快取| H["Redis Online Store"]
+    G -->|監控數據| I["監控與告警 Monitoring & Alerting"]
+    I -->|效能指標| J["Prometheus + Grafana"]
+    I -->|錯誤日誌| K["Sentry + Loki"]
+    I -->|異常通知| L["AlertManager"]
 ```
 
 ---
