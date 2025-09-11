@@ -1,6 +1,6 @@
 # Allpass - 登山時間預測系統 (Allpass - Hiking Time Prediction System)
 
-本專案是一個端到端的 **AI 驅動登山時間預測平台**，結合 **前端應用、後端 API、資料庫、ETL 工作流、模型訓練與部署、監控平台**，完整實現 **模型生命週期 (ML Lifecycle)**，展示了資料科學與 AI 工程的系統整合能力。
+本專案是一個端到端的 **AI 驅動登山時間預測平台**，結合 **前端應用、後端 API、資料庫、ETL 工作流、模型訓練與部署、監控平台**，完整實現 **模型生命週期 (ML Lifecycle)**。
 
 ---
 
@@ -159,11 +159,32 @@ curl -X POST http://localhost:5000/api/predictions \
 
 ---
 
-## 專案價值與應用
-- **資料科學家視角**：展現從資料收集、特徵工程到模型實驗與評估的完整流程。  
-- **AI 工程師視角**：落實模型服務化、快取、API Gateway 與監控，符合生產環境需求。  
-- **MLOps 視角**：整合 CI/CD、自動化部署、監控告警，完整 AI 生命週期實踐。  
+## 專案進度 (Project Progress)
+### 已完成 (✅)
+- ✅ 前端應用 (React + Leaflet + PWA)
+- ✅ 後端 API (Flask + SQLAlchemy + Nginx Gateway 基礎)
+  - /api/gpx_uploads: 上傳 GPX
+  - /api/predictions: 即時路段時間預測
+- ✅ 資料庫
+  - PostgreSQL + PostGIS (登山路線、軌跡儲存)
+  - Redis (快取結構已規劃，初步容器化完成)
+- ✅ ETL 容器
+  - 爬蟲 (BeautifulSoup)
+  - 資料清洗與特徵工程 (GeoPandas + Shapely)
+- ✅ Training 容器
+- ✅ Model Service 容器
 
-本專案可作為 **登山時間預測** 的應用案例，亦可擴展至 **交通預測、物流配送、運動數據分析** 等多領域。  
+### 開發中 (🚧)
+- 🚧 MLflow 模型管理 (Model Registry, Experiment Tracking)
+- 🚧 後端效能指標計算 (RMSE / Latency) 與資料庫紀錄
+- 🚧 Prometheus + Grafana 模型效能監控 (含 AlertManager)
+
+### 規劃中 (📌)
+- 📌 Airflow 工作排程 (觸發 ETL 與模型訓練)
+- 📌 LLM 分析報告生成 (/api/reports)
+- 📌 個人化路線推薦 (/api/recommendations)
+- 📌 CI/CD Pipeline (GitHub Actions + Docker Compose)
+- 📌 API Gateway 功能強化 (JWT, Rate Limit, API Log)
+- 📌 Kubernetes 部署
 
 
