@@ -20,7 +20,7 @@
      - `/api/gpx_uploads`: 上傳 GPX 軌跡
      - `/api/predictions`: 即時路段時間預測
      - `/api/reports`: LLM 報告生成
-     - `/api/recommendations`: 個人化路線建議
+     - `/api/recommendations`: 個人化路線推薦
    - API Gateway 功能：JWT 驗證、Rate Limit、API Log
 
 3. **資料庫 (Database Layer)**
@@ -127,7 +127,7 @@ allpass
 
 ### 1. 建立環境
 ```markdown
-git clone https://github.com/your-repo/allpass.git
+git clone https://github.com/chihjolin/allpass.git
 cd allpass
 docker-compose up -d
 ```
