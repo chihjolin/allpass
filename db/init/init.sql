@@ -440,3 +440,9 @@ BEFORE INSERT OR UPDATE OF recorded_at
 ON user_gpx.poi_visit_records
 FOR EACH ROW
 EXECUTE FUNCTION user_gpx.set_nearest_time();
+
+
+-- db/init/mlflow.sql
+CREATE DATABASE mlflow_db OWNER allpass_user;
+
+

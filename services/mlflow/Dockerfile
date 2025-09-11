@@ -1,12 +1,6 @@
-FROM python:3.10-slim
+# services/mlflow/Dockerfile
+FROM ghcr.io/mlflow/mlflow:v2.13.2
 
-WORKDIR /app
-
-RUN pip install --no-cache-dir mlflow psycopg2-binary boto3
-
-COPY mlflow_entry.sh /app/mlflow_entry.sh
-RUN chmod +x /app/mlflow_entry.sh
-
-EXPOSE 5000
-
-ENTRYPOINT ["/app/mlflow_entry.sh"]
+USER root
+RUN pip install psycopg2-binary
+USER 1000

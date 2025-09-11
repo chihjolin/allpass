@@ -1,13 +1,23 @@
 version: '3.8'
 
 services:
-    mlflow:
-      #build: ./services/mlflow
-      build: .
-      container_name: mlflow_server
-      ports:
-        - "5000:5000"
-      volumes:
-        - ./services/mlflow/data:/mlflow
-      restart: always
+  # ... 其他服務 ...
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.13.2 # 建議指定明確的版本
+    env_file:
+      - ./.env
+    ports:
+      - "${MLFLOW_HOST_PORT:-5001}:${MLFLOW_PORT:-5000}" # 將主機 5001 port 映射到容器 5000 port
+    volumes:
+      - ./mlruns:/mlruns # 將實驗紀錄掛載到本機，避免容器重啟後遺失
+    environment:
+      - MLFLOW_SERVER_DEFAULT_ARTIFACT_ROOT=/mlruns # 告訴 MLflow 將模型等產物存在 /mlruns
+    depends_on:
+      - postgres
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/mlflowdb
+      --default-artifact-root /mlruns
 
