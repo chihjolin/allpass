@@ -8,7 +8,7 @@ kernel/
 *.pem
 *bkp*
 backup/
-# models/
+models/
 #*test*
 node_modules
 
