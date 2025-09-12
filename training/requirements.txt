@@ -6,3 +6,4 @@ xgboost==2.1.1
 joblib
 SQLAlchemy
 psycopg2-binary
+mlflow
