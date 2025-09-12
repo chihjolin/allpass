@@ -144,7 +144,7 @@ services:
     env_file:
       - ./.env
     volumes:
-      - ./services/mlflow/mlruns:/mlruns # 將實驗紀錄掛載到本機，避免容器重啟後遺失
+      - ./mlruns:/mlruns # 將實驗紀錄掛載到本機，避免容器重啟後遺失
     ports:
       - "${MLFLOW_HOST_PORT:-5001}:${MLFLOW_PORT:-5000}" # 將主機 5001 port 映射到容器 5000 port
     networks:
@@ -158,7 +158,7 @@ services:
       mlflow server
       --host 0.0.0.0
       --port ${MLFLOW_PORT:-5000}
-      --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:${POSTGRES_PORT:-5432}/mlflow_db
+      --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:${POSTGRES_PORT:-5432}/${MLFLOW_DB:-mlflow_db}
       --default-artifact-root /mlruns
 
 
