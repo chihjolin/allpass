@@ -16,3 +16,6 @@ tttt.ipynb
 
 #services
 services/airflow/logs/
+
+#dev
+poetry_kernel/
