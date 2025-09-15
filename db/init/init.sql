@@ -270,46 +270,35 @@ CREATE TABLE ml_features.trail_segments(
 
 
 -------------------------------------
--- 建立推論紀錄表(暫定, 待修)
+-- 建立推論紀錄表: 推論與標籤
 -------------------------------------
--- 推論紀錄（線上寫）
-CREATE TABLE IF NOT EXISTS ml_inference.predictions (
-  id BIGSERIAL PRIMARY KEY,
-  session_uuid UUID NOT NULL,
-  trail_id INT NOT NULL,
-  user_id INT NOT NULL,
-  ts TIMESTAMPTZ NOT NULL DEFAULT now(),
-  features JSONB NOT NULL,
-  y_pred DOUBLE PRECISION NOT NULL,
-  model_name TEXT NOT NULL,
-  model_version TEXT NOT NULL,  -- 或 stage + version
-  request_id UUID NOT NULL,
-  UNIQUE(request_id)
+CREATE TABLE IF NOT EXISTS ml_inference.inference_logs (
+    id            BIGSERIAL PRIMARY KEY,
+    request_id    UUID UNIQUE NOT NULL,      -- 唯一請求追蹤
+    session_uuid  UUID NOT NULL,             -- 使用者當次 session
+    user_id       INT NOT NULL,
+    trail_id      INT NOT NULL,
+    ts            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    features      JSONB NOT NULL,            -- 輸入特徵
+    y_pred        DOUBLE PRECISION NOT NULL, -- 預測結果
+    y_actual      DOUBLE PRECISION,          -- 實際結果（事後補上，可為 NULL）
+    model_name    TEXT NOT NULL,
+    model_version TEXT NOT NULL              -- 可存版本號或 stage
 );
 
--- 真實標籤（到站時寫入）
-CREATE TABLE IF NOT EXISTS ml_inference.labels (
-  id BIGSERIAL PRIMARY KEY,
-  session_uuid UUID NOT NULL,
-  trail_id INT NOT NULL,
-  user_id INT NOT NULL,
-  ts TIMESTAMPTZ NOT NULL,
-  y_actual DOUBLE PRECISION NOT NULL,
-  request_id UUID NOT NULL  -- 關聯哪次預測
-);
-
--- 聚合評估指標（計算任務寫）
+-------------------------------------
+-- 模型評估指標（每日/批次聚合）
+-------------------------------------
 CREATE TABLE IF NOT EXISTS ml_inference.eval_metrics (
-  id BIGSERIAL PRIMARY KEY,
-  metric_date DATE NOT NULL,
-  model_version TEXT NOT NULL,
-  r2 DOUBLE PRECISION,
-  rmse DOUBLE PRECISION,
-  sample_size INT,
-  computed_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(metric_date, model_version)
+    id           BIGSERIAL PRIMARY KEY,
+    metric_date  DATE NOT NULL,
+    model_version TEXT NOT NULL,
+    r2           DOUBLE PRECISION,
+    rmse         DOUBLE PRECISION,
+    sample_size  INT,
+    computed_at  TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(metric_date, model_version)
 );
-
 
 -------------------------------------
 -- 建立關聯表

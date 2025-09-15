@@ -12,11 +12,22 @@ from sklearn.preprocessing import MinMaxScaler
 from sqlalchemy import text
 
 from common.utils.dbcon import engine
+import mlflow
+from dotenv import load_dotenv
 
-# import warnings
+# 載入環境變數(開發測試用)
+load_dotenv(override=True)
 
+# -----------------------------
+# MLflow 設定
+# -----------------------------
+MLFLOW_HOST = os.getenv("MLFLOW_HOST", "localhost")
+MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5001")
+MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
+mlflow.set_tracking_uri(MLFLOW_URI)
 
-# warnings.filterwarnings("ignore")
+EXPERIMENT_NAME = "time_prediction_training"
+mlflow.set_experiment(EXPERIMENT_NAME)
 
 
 def main():
@@ -30,23 +41,51 @@ def main():
     6. 評估模型表現
     7. 保存模型
     """
-    # 1. 從資料庫撈取資料
-    df_features = get_features()
-    # 2. 正規化
-    X, y, X_train_scaled, X_test_scaled, y_train, y_test, scaler = pre_processing(
-        df_features
-    )
-    # 3. 超參數搜尋
-    base_params, best_params = train_model(X_train_scaled, y_train)
-    # 4. 訓練集成模型
-    models = train_ensemble(X_train_scaled, y_train, base_params, best_params)
-    # 5. 測試集預測
-    train_pred = ensemble_predict(models, X_train_scaled)
-    test_pred = ensemble_predict(models, X_test_scaled)
-    # 6. 評估
-    metrics = evaluate(models, y_train, train_pred, y_test, test_pred)
-    # 7. 保存模型
-    save_pipeline(models, scaler, X.columns.tolist(), metrics)
+    with mlflow.start_run() as run:
+
+        # 1. 從資料庫撈取資料
+        df_features = get_features()
+        mlflow.log_param("num_samples", len(df_features))
+
+        # 2. 正規化
+        X, y, X_train_scaled, X_test_scaled, y_train, y_test, scaler = pre_processing(
+            df_features
+        )
+        mlflow.log_param("train_data_shape", X_train_scaled.shape)
+        mlflow.log_param("test_data_shape", X_test_scaled.shape)
+
+        # 3. 超參數搜尋
+        base_params, best_params = train_model(X_train_scaled, y_train)
+        mlflow.log_params(base_params)
+        mlflow.log_params(best_params)
+
+        # 4. 訓練集成模型
+        models = train_ensemble(X_train_scaled, y_train, base_params, best_params)
+
+        # 5. 測試集預測
+        train_pred = ensemble_predict(models, X_train_scaled)
+        test_pred = ensemble_predict(models, X_test_scaled)
+    
+        # 6. 評估
+        metrics = evaluate(models, y_train, train_pred, y_test, test_pred)
+        mlflow.log_metrics(metrics)
+
+        # 7. 保存模型
+        pipeline_to_log = {"scaler": scaler, "models": models, "features": X.columns.tolist()}
+        # log_model 會自動用 joblib.dump 序列化
+        #(1) log 到 run 的 artifacts
+        mlflow.pyfunc.log_model(
+            artifact_path="model", # 在 MLflow UI 中看到的資料夾名稱
+            python_model=TimePredictionModel(pipeline_to_log) # 需要一個包裝類別來符合pyfunc格式
+            #registered_model_name="time_prediction_model" # 註冊到 Model Registry
+        )
+        # #(2) 再用 register_model 註冊
+        # mlflow.register_model(
+        #     model_uri=f"runs:/{mlflow.active_run().info.run_id}/model",
+        #     name="time_prediction_model"
+        # )
+
+        #save_pipeline(models, scaler, X.columns.tolist(), metrics)
 
 
 def get_features():
@@ -205,28 +244,39 @@ def evaluate(models, y_train, train_pred, y_test, test_pred):
     return metrics
 
 
-def save_pipeline(models, scaler, feature_names, metrics, output_dir="/app/models"):
-    # # 本機測試
-    # output_dir = "./models"
-    os.makedirs(output_dir, exist_ok=True)
+# def save_pipeline(models, scaler, feature_names, metrics, output_dir="/app/models"):
+#     # # 本機測試
+#     # output_dir = "./models"
+#     os.makedirs(output_dir, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_path = os.path.join(output_dir, f"time_prediction_{timestamp}.pkl")
-    meta_path = os.path.join(output_dir, f"time_prediction_{timestamp}.json")
+#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#     model_path = os.path.join(output_dir, f"time_prediction_{timestamp}.pkl")
+#     meta_path = os.path.join(output_dir, f"time_prediction_{timestamp}.json")
 
-    # 保存 pkl (scaler + models + features)
-    joblib.dump(
-        {"scaler": scaler, "models": models, "features": feature_names},
-        model_path,
-    )
+#     # 保存 pkl (scaler + models + features)
+#     joblib.dump(
+#         {"scaler": scaler, "models": models, "features": feature_names},
+#         model_path,
+#     )
 
-    # 保存 metadata
-    metadata = {"timestamp": timestamp, "metrics": metrics}
-    with open(meta_path, "w") as f:
-        json.dump(metadata, f, indent=2)
+#     # 保存 metadata
+#     metadata = {"timestamp": timestamp, "metrics": metrics}
+#     with open(meta_path, "w") as f:
+#         json.dump(metadata, f, indent=2)
 
-    print(f"模型已保存至 {model_path}")
-    return model_path, meta_path
+#     print(f"模型已保存至 {model_path}")
+#     return model_path, meta_path
+
+class TimePredictionModel(mlflow.pyfunc.PythonModel):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+
+    def predict(self, context, model_input):
+        # 這裡的 model_input 是 pandas DataFrame
+        ordered_df = model_input[self.pipeline['features']]
+        scaled_features = self.pipeline['scaler'].transform(ordered_df)
+        predictions = [model.predict(scaled_features) for model in self.pipeline['models']]
+        return np.mean(predictions, axis=0)
 
 
 if __name__ == "__main__":
