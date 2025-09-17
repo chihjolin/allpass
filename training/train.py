@@ -42,6 +42,7 @@ def main():
     7. 保存模型
     """
     with mlflow.start_run() as run:
+        print(f"Run ID: {run.info.run_id}")
 
         # 1. 從資料庫撈取資料
         df_features = get_features()

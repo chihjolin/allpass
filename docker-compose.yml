@@ -35,27 +35,27 @@ services:
       timeout: 5s
       retries: 5
 
-  #ETL:
-  etl:
-    build:
-      context: .
-      dockerfile: etl/Dockerfile
-    container_name: allpass_etl_container
-    env_file:
-      - ./.env
-    volumes:
-      # 熱更新 ETL 程式碼
-      - ./etl:/app/etl
-      # # 熱更新 common package
-      # - ./common:/app/common
-    networks:
-      - allpass-network
-    depends_on:
-      redis:
-        condition: service_started
-      postgis:
-        condition: service_healthy
-    working_dir: /app
+  # #ETL:
+  # etl:
+  #   build:
+  #     context: .
+  #     dockerfile: etl/Dockerfile
+  #   container_name: allpass_etl_container
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     # 熱更新 ETL 程式碼
+  #     - ./etl:/app/etl
+  #     # # 熱更新 common package
+  #     # - ./common:/app/common
+  #   networks:
+  #     - allpass-network
+  #   depends_on:
+  #     redis:
+  #       condition: service_started
+  #     postgis:
+  #       condition: service_healthy
+  #   working_dir: /app
 
   #Backend 服務
   backend:
@@ -74,8 +74,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      etl:
-        condition: service_completed_successfully   # 等ETL成功才啟動      
+      # etl:
+      #   condition: service_completed_successfully   # 等ETL成功才啟動      
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:${FLASK_PORT:-5000}/health || exit 1" ]
@@ -98,23 +98,80 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  #Training:
-  training:
-    build: 
-      context: .
-      dockerfile: training/Dockerfile
-    container_name: allpass_training_container
+  # #Training:
+  # training:
+  #   build: 
+  #     context: .
+  #     dockerfile: training/Dockerfile
+  #   container_name: allpass_training_container
+  #   env_file:
+  #     - ./.env
+  #   # volumes:
+  #   #   - ./models:/app/models
+  #   networks:
+  #     - allpass-network
+  #   depends_on:
+  #     postgis:
+  #       condition: service_healthy
+  #     etl:
+  #       condition: service_completed_successfully   # 等ETL成功才啟動
+
+
+  #minio
+  minio:
+    image: minio/minio:RELEASE.2023-09-07T02-05-02Z # 建議指定明確版本
+    container_name: allpass_minio_container
+    ports:
+      - "${MINIO_HOST_PORT:-9000}:${MINIO_PORT:-9000}"   # API Port
+      - "${MINIO_CONSOLE_HOST_PORT:-9001}:${MINIO_CONSOLE_PORT:-9001}" # Web Console Port
     env_file:
-      - ./.env
+      - ./.env # MinIO 的帳密會從 .env 讀取
     volumes:
-      - ./models:/app/models
+      - minio_data:/data # 使用命名卷來持久化儲存 MinIO 的數據
     networks:
       - allpass-network
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
+    healthcheck:
+      # 使用 MinIO Client (mc) 來檢查服務是否就緒
+      # mc ready local 是 mc 檢查名為 local 的預設主機 (http://127.0.0.1:9000) 是否就緒的標準指令
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s # 可以縮短間隔，以便更快檢測
+      timeout: 5s
+      retries: 5
+
+
+  #mlflow
+  mlflow:
+    build:
+      context: ./services/mlflow
+      dockerfile: Dockerfile
+    #image: ghcr.io/mlflow/mlflow:v2.13.2 # 建議指定明確的版本
+    container_name: allpass_mlflow_container
+    env_file:
+      - ./.env
+    # volumes:
+    #   - ./mlruns:/mlruns # 將實驗紀錄掛載到本機，避免容器重啟後遺失
+    ports:
+      - "${MLFLOW_HOST_PORT:-5001}:${MLFLOW_PORT:-5000}" # 將主機 5001 port 映射到容器 5000 port
+    networks:
+      - allpass-network
+    environment:
+      #- MLFLOW_SERVER_DEFAULT_ARTIFACT_ROOT=/mlruns # 告訴 MLflow 將模型等產物存在 /mlruns
+      # 這三個環境變數是為了讓 MLflow Client 知道如何連線到 MinIO
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:${MINIO_PORT:-9000}
     depends_on:
       postgis:
+          condition: service_healthy
+      minio: # 新增對 minio 的依賴
         condition: service_healthy
-      etl:
-        condition: service_completed_successfully   # 等ETL成功才啟動
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port ${MLFLOW_PORT:-5000}
+      --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:${POSTGRES_PORT:-5432}/${MLFLOW_DB:-mlflow_db}
+      --default-artifact-root s3://${MINIO_BUCKET_NAME:-mlflow-artifacts}/
 
   #Time_Prediction
   time_prediction:
@@ -135,38 +192,14 @@ services:
     #     condition: service_completed_successfully # 等training成功才啟動
 
 
-  mlflow:
-    build:
-      context: ./services/mlflow
-      dockerfile: Dockerfile
-    #image: ghcr.io/mlflow/mlflow:v2.13.2 # 建議指定明確的版本
-    container_name: allpass_mlflow_container
-    env_file:
-      - ./.env
-    volumes:
-      - ./mlruns:/mlruns # 將實驗紀錄掛載到本機，避免容器重啟後遺失
-    ports:
-      - "${MLFLOW_HOST_PORT:-5001}:${MLFLOW_PORT:-5000}" # 將主機 5001 port 映射到容器 5000 port
-    networks:
-      - allpass-network
-    environment:
-      - MLFLOW_SERVER_DEFAULT_ARTIFACT_ROOT=/mlruns # 告訴 MLflow 將模型等產物存在 /mlruns
-    depends_on:
-      postgis:
-          condition: service_healthy
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port ${MLFLOW_PORT:-5000}
-      --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:${POSTGRES_PORT:-5432}/${MLFLOW_DB:-mlflow_db}
-      --default-artifact-root /mlruns
-
 
 volumes:
   postgis_data:
     name: allpass_postgis_data
   redis_data:
     name: allpass_redis_data
+  minio_data:
+    name: allpass_minio_data
 
 networks:
   allpass-network:
