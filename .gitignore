@@ -13,6 +13,7 @@ models/
 node_modules
 
 tttt.ipynb
+local_model/
 
 #services
 services/airflow/logs/

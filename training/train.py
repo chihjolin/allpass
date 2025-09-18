@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import shutil
 
 import joblib
 import numpy as np
@@ -18,16 +19,36 @@ from dotenv import load_dotenv
 # 載入環境變數(開發測試用)
 load_dotenv(override=True)
 
+
 # -----------------------------
-# MLflow 設定
+# MLflow, MinIO 設定
 # -----------------------------
 MLFLOW_HOST = os.getenv("MLFLOW_HOST", "localhost")
 MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5001")
 MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
 
-EXPERIMENT_NAME = "time_prediction_training"
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+EXPERIMENT_NAME = f"time_prediction_training_{timestamp}"
 mlflow.set_experiment(EXPERIMENT_NAME)
+
+MINIO_HOST=os.getenv("MINIO_HOST")
+MINIO_PORT=os.getenv("MINIO_PORT")
+MINIO_ROOT_USER=os.getenv("MINIO_ROOT_USER")
+MINIO_ROOT_PASSWORD=os.getenv("MINIO_ROOT_PASSWORD")
+
+AWS_ACCESS_KEY_ID = MINIO_ROOT_USER
+AWS_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD
+MLFLOW_S3_ENDPOINT_URL= f"http://{MINIO_HOST}:{MINIO_PORT}"
+
+#設定環境變數: MLflow 讀 artifact store 設定會讀環境變數
+os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
+os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
+
+print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
+print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
+print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 
 
 def main():
@@ -42,7 +63,10 @@ def main():
     7. 保存模型
     """
     with mlflow.start_run() as run:
-        print(f"Run ID: {run.info.run_id}")
+        uri = mlflow.get_artifact_uri()
+        print("Artifact URI:", uri)
+        run_id = run.info.run_id
+        print(f"Run ID: {run_id}")
 
         # 1. 從資料庫撈取資料
         df_features = get_features()
@@ -73,13 +97,34 @@ def main():
 
         # 7. 保存模型
         pipeline_to_log = {"scaler": scaler, "models": models, "features": X.columns.tolist()}
+           #log artifacts
+        try: 
+            local_tmppath = "local_model"
+            if os.path.exists(local_tmppath):
+                shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
+            mlflow.pyfunc.save_model(path=local_tmppath, python_model=TimePredictionModel(pipeline_to_log))
+            mlflow.log_artifacts(local_tmppath, artifact_path="model")
+        
+            # 取得模型儲存位置
+            model_uri = mlflow.get_artifact_uri("model")
+            print("Model artifact URI:", model_uri)
+            print("模型儲存成功")
+        except Exception as e:
+            print("模型儲存失敗:", e)
+
+        #model registry
+        model_uri = f"runs:/{run_id}/model"
+        mlflow.register_model(model_uri=model_uri, name="time_prediction_model")
+
+
+
         # log_model 會自動用 joblib.dump 序列化
         #(1) log 到 run 的 artifacts
-        mlflow.pyfunc.log_model(
-            artifact_path="model", # 在 MLflow UI 中看到的資料夾名稱
-            python_model=TimePredictionModel(pipeline_to_log) # 需要一個包裝類別來符合pyfunc格式
-            #registered_model_name="time_prediction_model" # 註冊到 Model Registry
-        )
+        # mlflow.pyfunc.log_model(
+        #     artifact_path="model", # 在 MLflow UI 中看到的資料夾名稱
+        #     python_model=TimePredictionModel(pipeline_to_log), # 需要一個包裝類別來符合pyfunc格式
+        #     registered_model_name="time_prediction_model" # 註冊到 Model Registry
+        # )
         # #(2) 再用 register_model 註冊
         # mlflow.register_model(
         #     model_uri=f"runs:/{mlflow.active_run().info.run_id}/model",

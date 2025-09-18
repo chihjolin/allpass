@@ -4,6 +4,9 @@ from mlflow.pyfunc import PythonModel
 from dotenv import load_dotenv
 from datetime import datetime
 
+import pandas as pd
+import shutil
+
 # 建立時間字串 (格式：YYYYMMDD_HHMMSS)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -15,6 +18,7 @@ MLFLOW_HOST = os.getenv("MLFLOW_HOST", "localhost")
 MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5001")
 MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
+
 
 
 EXPERIMENT_NAME = f"test_upgrade_new_{timestamp}" 
@@ -42,9 +46,7 @@ print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
 print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 #print("MLFLOW_ARTIFACT_URI",os.environ.get("MLFLOW_ARTIFACT_URI") )
 
-with mlflow.start_run() as run:
-    uri = mlflow.get_artifact_uri()
-    print("Artifact URI:", uri)
+
 
 # --------------------------
 # 定義 PythonModel
@@ -58,19 +60,68 @@ class DummyModel(PythonModel):
 # --------------------------
 
 with mlflow.start_run() as run:
-    print(f"Run ID: {run.info.run_id}")
+    uri = mlflow.get_artifact_uri()
+    print("Artifact URI:", uri)
+    run_id = run.info.run_id
+    print(f"Run ID: {run_id}")
     # Log params / metrics
     mlflow.log_param("param1", 123)
     mlflow.log_metric("metric1", 0.99)
+    
+    #log artifacts
+    try: 
+        local_tmppath = "local_model"
+        if os.path.exists(local_tmppath):
+            shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
+        # mlflow.pyfunc.log_model(
+        #     artifact_path="model",
+        #     python_model = DummyModel()
+        # )
+        mlflow.pyfunc.save_model(path=local_tmppath, python_model=DummyModel())
+        mlflow.log_artifacts(local_tmppath, artifact_path="model")
+    
+        # 取得模型儲存位置
+        model_uri = mlflow.get_artifact_uri("model")
+        print("Model artifact URI:", model_uri)
+        print("模型儲存成功")
+    except Exception as e:
+        print("模型儲存失敗:", e)
+
+    #model registry
+    model_uri = f"runs:/{run_id}/model"
+    mlflow.register_model(model_uri=model_uri, name="upgrade_test_model_new")
+
+
+# 載入模型
+loaded_model = mlflow.pyfunc.load_model(model_uri)
+
+# 測試 predict()
+test_input = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+result = loaded_model.predict(test_input)
+
+print("✅ Predict 測試結果:")
+print(result)
+
+
+
+    # print("Artifact logging 成功")
+
+    # result = mlflow.register_model(
+    #     f"runs:/{run_id}/model",
+    #     "upgrade_test_model"
+    # )
+
+    # print("Model Registry response:", result)
+
 
     # --------------------------
     # 直接 log model 到 MinIO 並註冊
     # --------------------------
-    mlflow.pyfunc.log_model(
-        artifact_path="model",
-        python_model=DummyModel(),
-        registered_model_name="upgrade_test_model"
-        )
+    # mlflow.pyfunc.log_model(
+    #     artifact_path="model",
+    #     python_model=DummyModel(),
+    #     registered_model_name="upgrade_test_model"
+    #     )
 
     # mlflow.pyfunc.save_model(
     #     path="/tmp/model",   # 先存在容器或本地暫存
@@ -84,3 +135,24 @@ with mlflow.start_run() as run:
     
 
 
+# #----Test----
+# with mlflow.start_run() as run:
+#     print("Run ID:", run.info.run_id)
+#     print("Experiment ID:", run.info.experiment_id)
+
+#     # Log 一個參數
+#     mlflow.log_param("test_param", 42)
+
+#     # 建立一個測試檔案
+#     test_file = "test_artifact.txt"
+#     with open(test_file, "w") as f:
+#         f.write("hello mlflow artifact test\n")
+
+#     # Log 該檔案為 artifact
+#     mlflow.log_artifact(test_file)
+
+#     # 印出 run 的 artifact URI
+#     print("Artifact URI:", mlflow.get_artifact_uri())
+
+# print("✅ 測試完成，請到 MinIO bucket & MLflow UI 檢查 run-level artifacts")
+# #---Test---
