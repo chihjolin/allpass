@@ -2,6 +2,10 @@ import os
 import mlflow
 from mlflow.pyfunc import PythonModel
 from dotenv import load_dotenv
+from datetime import datetime
+
+# 建立時間字串 (格式：YYYYMMDD_HHMMSS)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # 載入環境變數(開發測試用)
 load_dotenv(override=True)
@@ -13,7 +17,7 @@ MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
 
 
-EXPERIMENT_NAME = "test_upgrade_new"
+EXPERIMENT_NAME = f"test_upgrade_new_{timestamp}" 
 mlflow.set_experiment(EXPERIMENT_NAME)
 
 # Minio artifact store
@@ -21,7 +25,7 @@ MINIO_HOST=os.getenv("MINIO_HOST")
 MINIO_PORT=os.getenv("MINIO_PORT")
 MINIO_ROOT_USER=os.getenv("MINIO_ROOT_USER")
 MINIO_ROOT_PASSWORD=os.getenv("MINIO_ROOT_PASSWORD")
-MINIO_BUCKET_NAME=os.getenv("MINIO_BUCKET_NAME")
+#MINIO_BUCKET_NAME=os.getenv("MINIO_BUCKET_NAME")
 
 AWS_ACCESS_KEY_ID = MINIO_ROOT_USER
 AWS_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD
@@ -31,12 +35,12 @@ MLFLOW_S3_ENDPOINT_URL= f"http://{MINIO_HOST}:{MINIO_PORT}"
 os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
 os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
 os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
-os.environ["MLFLOW_ARTIFACT_URI"] = f"s3://{MINIO_BUCKET_NAME}"
+#os.environ["MLFLOW_ARTIFACT_URI"] = f"s3://{MINIO_BUCKET_NAME}"
 
 print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
 print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
 print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
-print("MLFLOW_ARTIFACT_URI",os.environ.get("MLFLOW_ARTIFACT_URI") )
+#print("MLFLOW_ARTIFACT_URI",os.environ.get("MLFLOW_ARTIFACT_URI") )
 
 with mlflow.start_run() as run:
     uri = mlflow.get_artifact_uri()
