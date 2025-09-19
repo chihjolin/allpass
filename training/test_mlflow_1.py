@@ -1,9 +1,11 @@
 import os
 import mlflow
 from mlflow.pyfunc import PythonModel
+from mlflow.tracking import MlflowClient
 from dotenv import load_dotenv
 from datetime import datetime
 
+import time
 import pandas as pd
 import shutil
 
@@ -55,52 +57,126 @@ class DummyModel(PythonModel):
     def predict(self, context, model_input):
         return model_input
 
-# --------------------------
-# 開始 MLflow Run
-# --------------------------
 
-with mlflow.start_run() as run:
-    uri = mlflow.get_artifact_uri()
-    print("Artifact URI:", uri)
-    run_id = run.info.run_id
-    print(f"Run ID: {run_id}")
-    # Log params / metrics
-    mlflow.log_param("param1", 123)
-    mlflow.log_metric("metric1", 0.99)
-    
-    #log artifacts
-    try: 
+model_name = "upgrade_test_model_new"
+client = MlflowClient()
+
+
+
+def register_model_with_metric_check(
+    model_name: str,
+    python_model: PythonModel,
+    metric_name: str,
+    metric_value: float,
+    metric_threshold: float
+):
+    #client = MlflowClient()
+    # --------------------------
+    # 開始 MLflow Run
+    # --------------------------
+
+    with mlflow.start_run() as run:
+        run_id = run.info.run_id
+        mlflow.log_param("param1", 123)
+        mlflow.log_metric(metric_name, metric_value)
+
+        # 儲存模型
         local_tmppath = "local_model"
         if os.path.exists(local_tmppath):
-            shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
-        # mlflow.pyfunc.log_model(
-        #     artifact_path="model",
-        #     python_model = DummyModel()
-        # )
-        mlflow.pyfunc.save_model(path=local_tmppath, python_model=DummyModel())
+            shutil.rmtree(local_tmppath)
+        mlflow.pyfunc.save_model(path=local_tmppath, python_model=python_model)
         mlflow.log_artifacts(local_tmppath, artifact_path="model")
+
+        # 註冊模型
+        model_uri = f"runs:/{run_id}/model"
+        result = mlflow.register_model(model_uri=model_uri, name=model_name)
+        new_version = result.version
+
+        time.sleep(5)  # 等待模型註冊完成
+
+        # 條件判斷：是否更新 Production
+        if metric_value > metric_threshold:
+            existing_prod = client.get_latest_versions(name=model_name, stages=["Production"])
+            if existing_prod:
+                old_version = existing_prod[0].version
+                client.transition_model_version_stage(
+                    name=model_name,
+                    version=old_version,
+                    stage="Archived"
+                )
+                print(f"舊版 {old_version} 已標註為 Archived")
+
+            client.transition_model_version_stage(
+                name=model_name,
+                version=new_version,
+                stage="Production"
+            )
+            print(f"新版本 {new_version} 已標註為 Production")
+        else:
+            client.transition_model_version_stage(
+                name=model_name,
+                version=new_version,
+                stage="Staging"
+            )
+            print(f"新版本 {new_version} 標註為 Staging（未達 Production 標準）")
+
+
+def load_production_model(model_name:str):    
+    """
+    從 MLflow Model Registry 載入標註為 Production 的模型，並印出版本號。
+    Args:
+        model_name (str): 模型註冊名稱  
+    Returns:
+        model: 可用於預測的 MLflow PyFunc 模型
+    """
+    try:
+        # 查詢 Production 階段的版本
+        versions = client.get_latest_versions(name=model_name, stages=["Production"])
+        if not versions:
+            print(f"模型 '{model_name}' 沒有標註為 Production 的版本")
+            return None
+
+        version_info = versions[0]
+        version_number = version_info.version
+        print(f"模型 '{model_name}' 的 Production 版本為：{version_number}")
+
+        # 載入模型
+        model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
+        print(f"成功載入模型 '{model_name}' 的 Production 版本")
+        return model
+
     
-        # 取得模型儲存位置
-        model_uri = mlflow.get_artifact_uri("model")
-        print("Model artifact URI:", model_uri)
-        print("模型儲存成功")
     except Exception as e:
-        print("模型儲存失敗:", e)
-
-    #model registry
-    model_uri = f"runs:/{run_id}/model"
-    mlflow.register_model(model_uri=model_uri, name="upgrade_test_model_new")
+        print(f"載入模型失敗: {e}")
+        return None
 
 
-# 載入模型
-loaded_model = mlflow.pyfunc.load_model(model_uri)
 
-# 測試 predict()
-test_input = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
-result = loaded_model.predict(test_input)
+register_model_with_metric_check(
+    model_name="upgrade_test_model_new",
+    python_model=DummyModel(),
+    metric_name="accuracy",
+    metric_value=0.82,
+    metric_threshold=0.9
+)
 
-print("✅ Predict 測試結果:")
-print(result)
+
+
+# 載入Produciton模型
+model = load_production_model(model_name)
+
+if model:
+    test_input = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+    result = model.predict(test_input)
+    print("預測結果:", result)
+
+
+# # 測試 predict()
+# test_input = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+# result = loaded_model.predict(test_input)
+
+# print("✅ Predict 測試結果:")
+# print(result)
 
 
 

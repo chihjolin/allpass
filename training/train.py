@@ -2,6 +2,9 @@ import json
 import os
 from datetime import datetime
 import shutil
+from mlflow.pyfunc import PythonModel
+from mlflow.tracking import MlflowClient
+import time
 
 import joblib
 import numpy as np
@@ -29,7 +32,8 @@ MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-EXPERIMENT_NAME = f"time_prediction_training_{timestamp}"
+#EXPERIMENT_NAME = f"time_prediction_training_{timestamp}"
+EXPERIMENT_NAME = f"time_prediction_training_new"
 mlflow.set_experiment(EXPERIMENT_NAME)
 
 MINIO_HOST=os.getenv("MINIO_HOST")
@@ -50,6 +54,19 @@ print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
 print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
 print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 
+model_name = "time_prediction_model"
+client = MlflowClient()
+
+class TimePredictionModel(mlflow.pyfunc.PythonModel):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+
+    def predict(self, context, model_input):
+        # 這裡的 model_input 是 pandas DataFrame
+        ordered_df = model_input[self.pipeline['features']]
+        scaled_features = self.pipeline['scaler'].transform(ordered_df)
+        predictions = [model.predict(scaled_features) for model in self.pipeline['models']]
+        return np.mean(predictions, axis=0)
 
 def main():
     """
@@ -97,41 +114,33 @@ def main():
 
         # 7. 保存模型
         pipeline_to_log = {"scaler": scaler, "models": models, "features": X.columns.tolist()}
-           #log artifacts
-        try: 
-            local_tmppath = "local_model"
-            if os.path.exists(local_tmppath):
-                shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
-            mlflow.pyfunc.save_model(path=local_tmppath, python_model=TimePredictionModel(pipeline_to_log))
-            mlflow.log_artifacts(local_tmppath, artifact_path="model")
+        register_model_with_metric_check(
+            model_name = model_name,
+            run_id = run_id,
+            python_model = TimePredictionModel(pipeline_to_log),
+            metric_name = "test_r2",
+            metric_value = metrics["test_r2"],
+            metric_threshold = 0.8
+        )
+
+        # #log artifacts
+        # try: 
+        #     local_tmppath = "local_model"
+        #     if os.path.exists(local_tmppath):
+        #         shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
+        #     mlflow.pyfunc.save_model(path=local_tmppath, python_model=TimePredictionModel(pipeline_to_log))
+        #     mlflow.log_artifacts(local_tmppath, artifact_path="model")
         
-            # 取得模型儲存位置
-            model_uri = mlflow.get_artifact_uri("model")
-            print("Model artifact URI:", model_uri)
-            print("模型儲存成功")
-        except Exception as e:
-            print("模型儲存失敗:", e)
+        #     # 取得模型儲存位置
+        #     model_uri = mlflow.get_artifact_uri("model")
+        #     print("Model artifact URI:", model_uri)
+        #     print("模型儲存成功")
+        # except Exception as e:
+        #     print("模型儲存失敗:", e)
 
-        #model registry
-        model_uri = f"runs:/{run_id}/model"
-        mlflow.register_model(model_uri=model_uri, name="time_prediction_model")
-
-
-
-        # log_model 會自動用 joblib.dump 序列化
-        #(1) log 到 run 的 artifacts
-        # mlflow.pyfunc.log_model(
-        #     artifact_path="model", # 在 MLflow UI 中看到的資料夾名稱
-        #     python_model=TimePredictionModel(pipeline_to_log), # 需要一個包裝類別來符合pyfunc格式
-        #     registered_model_name="time_prediction_model" # 註冊到 Model Registry
-        # )
-        # #(2) 再用 register_model 註冊
-        # mlflow.register_model(
-        #     model_uri=f"runs:/{mlflow.active_run().info.run_id}/model",
-        #     name="time_prediction_model"
-        # )
-
-        #save_pipeline(models, scaler, X.columns.tolist(), metrics)
+        # #model registry
+        # model_uri = f"runs:/{run_id}/model"
+        # mlflow.register_model(model_uri=model_uri, name=model_name)
 
 
 def get_features():
@@ -191,7 +200,7 @@ def train_model(X_train_scaled, y_train):
     }
 
     # 依環境決定 GPU / CPU 訓練策略: 本機跑訓練用GPU, 容器跑先用CPU
-    use_gpu = os.environ.get("USE_XGB_GPU", "1") == "1"
+    use_gpu = os.environ.get("USE_XGB_GPU", "0") == "1"
     if use_gpu:
         device_params = {
             "tree_method": "gpu_hist",
@@ -312,18 +321,64 @@ def evaluate(models, y_train, train_pred, y_test, test_pred):
 
 #     print(f"模型已保存至 {model_path}")
 #     return model_path, meta_path
+   
 
-class TimePredictionModel(mlflow.pyfunc.PythonModel):
-    def __init__(self, pipeline):
-        self.pipeline = pipeline
+def register_model_with_metric_check(
+    model_name: str,
+    run_id:str,
+    python_model: PythonModel,
+    metric_name: str,
+    metric_value: float,
+    metric_threshold: float
+):
+    """
+    註冊模型並根據指定 metric 是否超過門檻來決定是否標註為 Production。
+    """
+    try:
+        client = MlflowClient()
+        # 儲存模型
+        local_tmppath = "local_model"
+        if os.path.exists(local_tmppath):
+            shutil.rmtree(local_tmppath)
+        mlflow.pyfunc.save_model(path=local_tmppath, python_model=python_model)
+        mlflow.log_artifacts(local_tmppath, artifact_path="model")
+        model_uri = mlflow.get_artifact_uri("model")
+        print("模型儲存位置:", model_uri)
 
-    def predict(self, context, model_input):
-        # 這裡的 model_input 是 pandas DataFrame
-        ordered_df = model_input[self.pipeline['features']]
-        scaled_features = self.pipeline['scaler'].transform(ordered_df)
-        predictions = [model.predict(scaled_features) for model in self.pipeline['models']]
-        return np.mean(predictions, axis=0)
+        # 註冊模型
+        model_uri = f"runs:/{run_id}/model"
+        result = mlflow.register_model(model_uri=model_uri, name=model_name)
+        new_version = result.version
 
+        time.sleep(5)  # 等待模型註冊完成
+
+        # 條件判斷：是否更新 Production
+        if metric_value > metric_threshold:
+            existing_prod = client.get_latest_versions(name=model_name, stages=["Production"])
+            if existing_prod:
+                old_version = existing_prod[0].version
+                client.transition_model_version_stage(
+                    name=model_name,
+                    version=old_version,
+                    stage="Archived"
+                )
+                print(f"舊版 {old_version} 已標註為 Archived")
+
+            client.transition_model_version_stage(
+                name=model_name,
+                version=new_version,
+                stage="Production"
+            )
+            print(f"新版本 {new_version} 已標註為 Production")
+        else:
+            client.transition_model_version_stage(
+                name=model_name,
+                version=new_version,
+                stage="Staging"
+            )
+            print(f"新版本 {new_version} 標註為 Staging（未達 Production 標準）")
+    except Exception as e:
+        print(f"模型註冊失敗: {e}")
 
 if __name__ == "__main__":
     main()

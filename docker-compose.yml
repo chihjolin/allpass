@@ -98,23 +98,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # #Training:
-  # training:
-  #   build: 
-  #     context: .
-  #     dockerfile: training/Dockerfile
-  #   container_name: allpass_training_container
-  #   env_file:
-  #     - ./.env
-  #   # volumes:
-  #   #   - ./models:/app/models
-  #   networks:
-  #     - allpass-network
-  #   depends_on:
-  #     postgis:
-  #       condition: service_healthy
-  #     etl:
-  #       condition: service_completed_successfully   # 等ETL成功才啟動
+  #Training:
+  training:
+    build: 
+      context: .
+      dockerfile: training/Dockerfile
+    container_name: allpass_training_container
+    env_file:
+      - ./.env
+    # volumes:
+    #   - ./models:/app/models
+    networks:
+      - allpass-network
+    depends_on:
+      postgis:
+        condition: service_healthy
+      etl:
+        condition: service_completed_successfully   # 等ETL成功才啟動
 
 
   #minio
@@ -181,8 +181,8 @@ services:
     container_name: allpass_time_prediction_container
     env_file:
       - ./.env
-    volumes:
-      - ./models:/app/models:ro #ro (read-only)
+    # volumes:
+    #   - ./models:/app/models:ro #ro (read-only)
     networks:
       - allpass-network
     ports:
