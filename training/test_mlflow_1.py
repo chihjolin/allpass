@@ -156,7 +156,7 @@ register_model_with_metric_check(
     model_name="upgrade_test_model_new",
     python_model=DummyModel(),
     metric_name="accuracy",
-    metric_value=0.82,
+    metric_value=0.95,
     metric_threshold=0.9
 )
 

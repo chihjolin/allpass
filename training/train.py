@@ -17,17 +17,18 @@ from sqlalchemy import text
 
 from common.utils.dbcon import engine
 import mlflow
-from dotenv import load_dotenv
 
-# 載入環境變數(開發測試用)
-load_dotenv(override=True)
+
+# # 載入環境變數(開發測試用)
+# from dotenv import load_dotenv
+# load_dotenv(override=True)
 
 
 # -----------------------------
 # MLflow, MinIO 設定
 # -----------------------------
-MLFLOW_HOST = os.getenv("MLFLOW_HOST", "localhost")
-MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5001")
+MLFLOW_HOST = os.getenv("MLFLOW_HOST", "mlflow")
+MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5000")
 MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
 
@@ -122,25 +123,6 @@ def main():
             metric_value = metrics["test_r2"],
             metric_threshold = 0.8
         )
-
-        # #log artifacts
-        # try: 
-        #     local_tmppath = "local_model"
-        #     if os.path.exists(local_tmppath):
-        #         shutil.rmtree(local_tmppath)  # 遞迴刪除目錄及所有內容
-        #     mlflow.pyfunc.save_model(path=local_tmppath, python_model=TimePredictionModel(pipeline_to_log))
-        #     mlflow.log_artifacts(local_tmppath, artifact_path="model")
-        
-        #     # 取得模型儲存位置
-        #     model_uri = mlflow.get_artifact_uri("model")
-        #     print("Model artifact URI:", model_uri)
-        #     print("模型儲存成功")
-        # except Exception as e:
-        #     print("模型儲存失敗:", e)
-
-        # #model registry
-        # model_uri = f"runs:/{run_id}/model"
-        # mlflow.register_model(model_uri=model_uri, name=model_name)
 
 
 def get_features():
@@ -296,32 +278,7 @@ def evaluate(models, y_train, train_pred, y_test, test_pred):
         f"測試 RMSE: {metrics['test_rmse']:.4f}, R²: {metrics['test_r2']:.4f}"
     )
     # 後續: metrics 寫到 log 或監控系統（MLflow / prometheus / DB），並保留 best_params、model_hash 以利追溯
-    return metrics
-
-
-# def save_pipeline(models, scaler, feature_names, metrics, output_dir="/app/models"):
-#     # # 本機測試
-#     # output_dir = "./models"
-#     os.makedirs(output_dir, exist_ok=True)
-
-#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#     model_path = os.path.join(output_dir, f"time_prediction_{timestamp}.pkl")
-#     meta_path = os.path.join(output_dir, f"time_prediction_{timestamp}.json")
-
-#     # 保存 pkl (scaler + models + features)
-#     joblib.dump(
-#         {"scaler": scaler, "models": models, "features": feature_names},
-#         model_path,
-#     )
-
-#     # 保存 metadata
-#     metadata = {"timestamp": timestamp, "metrics": metrics}
-#     with open(meta_path, "w") as f:
-#         json.dump(metadata, f, indent=2)
-
-#     print(f"模型已保存至 {model_path}")
-#     return model_path, meta_path
-   
+    return metrics  
 
 def register_model_with_metric_check(
     model_name: str,
