@@ -135,9 +135,7 @@ services:
     networks:
       - allpass-network
     entrypoint: /bin/sh
-    command: -c "
-      /scripts/init-minio.sh
-      "
+    command: -c "/scripts/init-minio.sh"
     depends_on:
       minio:
         condition: service_healthy
@@ -180,27 +178,27 @@ services:
       timeout: 5s
       retries: 5
 
-  #Training:
-  training:
-    build: 
-      context: .
-      dockerfile: training/Dockerfile
-    container_name: allpass_training_container
-    env_file:
-      - ./.env
-    # volumes:
-    #   - ./models:/app/models
-    networks:
-      - allpass-network
-    depends_on:
-      postgis:
-        condition: service_healthy
-      # etl:
-      #   condition: service_completed_successfully   # 等ETL成功才啟動
-      minio:
-        condition: service_healthy
-      mlflow:
-        condition: service_healthy
+  # #Training:
+  # training:
+  #   build: 
+  #     context: .
+  #     dockerfile: training/Dockerfile
+  #   container_name: allpass_training_container
+  #   env_file:
+  #     - ./.env
+  #   # volumes:
+  #   #   - ./models:/app/models
+  #   networks:
+  #     - allpass-network
+  #   depends_on:
+  #     postgis:
+  #       condition: service_healthy
+  #     # etl:
+  #     #   condition: service_completed_successfully   # 等ETL成功才啟動
+  #     minio:
+  #       condition: service_healthy
+  #     mlflow:
+  #       condition: service_healthy
 
 
   #Time_Prediction
