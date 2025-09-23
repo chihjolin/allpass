@@ -1,23 +1,22 @@
 import json
 import os
-from datetime import datetime
 import shutil
-from mlflow.pyfunc import PythonModel
-from mlflow.tracking import MlflowClient
 import time
+from datetime import datetime
 
 import joblib
+import mlflow
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from mlflow.pyfunc import PythonModel
+from mlflow.tracking import MlflowClient
 from sklearn.metrics import r2_score, root_mean_squared_error
 from sklearn.model_selection import KFold, RandomizedSearchCV, train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sqlalchemy import text
 
 from common.utils.dbcon import engine
-import mlflow
-
 
 # # 載入環境變數(開發測試用)
 # from dotenv import load_dotenv
@@ -33,20 +32,20 @@ MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
 mlflow.set_tracking_uri(MLFLOW_URI)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#EXPERIMENT_NAME = f"time_prediction_training_{timestamp}"
+# EXPERIMENT_NAME = f"time_prediction_training_{timestamp}"
 EXPERIMENT_NAME = f"time_prediction_training_new"
 mlflow.set_experiment(EXPERIMENT_NAME)
 
-MINIO_HOST=os.getenv("MINIO_HOST")
-MINIO_PORT=os.getenv("MINIO_PORT")
-MINIO_ROOT_USER=os.getenv("MINIO_ROOT_USER")
-MINIO_ROOT_PASSWORD=os.getenv("MINIO_ROOT_PASSWORD")
+MINIO_HOST = os.getenv("MINIO_HOST")
+MINIO_PORT = os.getenv("MINIO_PORT")
+MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER")
+MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD")
 
 AWS_ACCESS_KEY_ID = MINIO_ROOT_USER
 AWS_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD
-MLFLOW_S3_ENDPOINT_URL= f"http://{MINIO_HOST}:{MINIO_PORT}"
+MLFLOW_S3_ENDPOINT_URL = f"http://{MINIO_HOST}:{MINIO_PORT}"
 
-#設定環境變數: MLflow 讀 artifact store 設定會讀環境變數
+# 設定環境變數: MLflow 讀 artifact store 設定會讀環境變數
 os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
 os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
 os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
@@ -58,16 +57,20 @@ print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 model_name = "time_prediction_model"
 client = MlflowClient()
 
+
 class TimePredictionModel(mlflow.pyfunc.PythonModel):
     def __init__(self, pipeline):
         self.pipeline = pipeline
 
     def predict(self, context, model_input):
         # 這裡的 model_input 是 pandas DataFrame
-        ordered_df = model_input[self.pipeline['features']]
-        scaled_features = self.pipeline['scaler'].transform(ordered_df)
-        predictions = [model.predict(scaled_features) for model in self.pipeline['models']]
+        ordered_df = model_input[self.pipeline["features"]]
+        scaled_features = self.pipeline["scaler"].transform(ordered_df)
+        predictions = [
+            model.predict(scaled_features) for model in self.pipeline["models"]
+        ]
         return np.mean(predictions, axis=0)
+
 
 def main():
     """
@@ -108,20 +111,24 @@ def main():
         # 5. 測試集預測
         train_pred = ensemble_predict(models, X_train_scaled)
         test_pred = ensemble_predict(models, X_test_scaled)
-    
+
         # 6. 評估
         metrics = evaluate(models, y_train, train_pred, y_test, test_pred)
         mlflow.log_metrics(metrics)
 
         # 7. 保存模型
-        pipeline_to_log = {"scaler": scaler, "models": models, "features": X.columns.tolist()}
+        pipeline_to_log = {
+            "scaler": scaler,
+            "models": models,
+            "features": X.columns.tolist(),
+        }
         register_model_with_metric_check(
-            model_name = model_name,
-            run_id = run_id,
-            python_model = TimePredictionModel(pipeline_to_log),
-            metric_name = "test_r2",
-            metric_value = metrics["test_r2"],
-            metric_threshold = 0.8
+            model_name=model_name,
+            run_id=run_id,
+            python_model=TimePredictionModel(pipeline_to_log),
+            metric_name="test_r2",
+            metric_value=metrics["test_r2"],
+            metric_threshold=0.8,
         )
 
 
@@ -278,15 +285,16 @@ def evaluate(models, y_train, train_pred, y_test, test_pred):
         f"測試 RMSE: {metrics['test_rmse']:.4f}, R²: {metrics['test_r2']:.4f}"
     )
     # 後續: metrics 寫到 log 或監控系統（MLflow / prometheus / DB），並保留 best_params、model_hash 以利追溯
-    return metrics  
+    return metrics
+
 
 def register_model_with_metric_check(
     model_name: str,
-    run_id:str,
+    run_id: str,
     python_model: PythonModel,
     metric_name: str,
     metric_value: float,
-    metric_threshold: float
+    metric_threshold: float,
 ):
     """
     註冊模型並根據指定 metric 是否超過門檻來決定是否標註為 Production。
@@ -311,31 +319,28 @@ def register_model_with_metric_check(
 
         # 條件判斷：是否更新 Production
         if metric_value > metric_threshold:
-            existing_prod = client.get_latest_versions(name=model_name, stages=["Production"])
+            existing_prod = client.get_latest_versions(
+                name=model_name, stages=["Production"]
+            )
             if existing_prod:
                 old_version = existing_prod[0].version
                 client.transition_model_version_stage(
-                    name=model_name,
-                    version=old_version,
-                    stage="Archived"
+                    name=model_name, version=old_version, stage="Archived"
                 )
                 print(f"舊版 {old_version} 已標註為 Archived")
 
             client.transition_model_version_stage(
-                name=model_name,
-                version=new_version,
-                stage="Production"
+                name=model_name, version=new_version, stage="Production"
             )
             print(f"新版本 {new_version} 已標註為 Production")
         else:
             client.transition_model_version_stage(
-                name=model_name,
-                version=new_version,
-                stage="Staging"
+                name=model_name, version=new_version, stage="Staging"
             )
             print(f"新版本 {new_version} 標註為 Staging（未達 Production 標準）")
     except Exception as e:
         print(f"模型註冊失敗: {e}")
+
 
 if __name__ == "__main__":
     main()

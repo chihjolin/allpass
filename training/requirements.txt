@@ -7,3 +7,4 @@ joblib
 SQLAlchemy
 psycopg2-binary
 mlflow==3.3.2
+boto3
