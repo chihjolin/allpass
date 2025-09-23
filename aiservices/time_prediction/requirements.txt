@@ -1,10 +1,10 @@
 fastapi
 pydantic
 uvicorn[standard]
-scikit-learn
-pandas
+scikit-learn==1.5.1
+pandas==2.2.2
 joblib
-xgboost
-numpy
+xgboost==2.1.1
+numpy==1.26.4
 redis
-mlflow
+mlflow==3.3.2

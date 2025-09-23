@@ -9,40 +9,6 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import mlflow
-from mlflow.tracking import MlflowClient
-from dotenv import load_dotenv
-
-
-
-# 載入環境變數(開發測試用)
-load_dotenv(override=True)
-
-
-# -----------------------------
-# MLflow, MinIO 設定
-# -----------------------------
-MLFLOW_HOST = os.getenv("MLFLOW_HOST", "localhost")
-MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5001")
-MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
-mlflow.set_tracking_uri(MLFLOW_URI)
-
-MINIO_HOST=os.getenv("MINIO_HOST")
-MINIO_PORT=os.getenv("MINIO_PORT")
-MINIO_ROOT_USER=os.getenv("MINIO_ROOT_USER")
-MINIO_ROOT_PASSWORD=os.getenv("MINIO_ROOT_PASSWORD")
-
-AWS_ACCESS_KEY_ID = MINIO_ROOT_USER
-AWS_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD
-MLFLOW_S3_ENDPOINT_URL= f"http://{MINIO_HOST}:{MINIO_PORT}"
-
-#設定環境變數: MLflow 讀 artifact store 設定會讀環境變數
-os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
-os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
-
-client = MlflowClient()
-model_name = "time_prediction_model"
 
 
 # --- Pydantic 模型定義 API 的輸入格式 ---
@@ -94,36 +60,6 @@ def find_latest_model_path(path: str) -> str:
     # 根據檔名 (隱含了時間戳) 找到最新的檔案
     latest_file = max(list_of_files, key=os.path.basename)
     return latest_file
-
-def load_production_model(model_name:str):    
-    """
-    從 MLflow Model Registry 載入標註為 Production 的模型，並印出版本號。
-    Args:
-        model_name (str): 模型註冊名稱  
-    Returns:
-        model: 可用於預測的 MLflow PyFunc 模型
-    """
-    try:
-        # 查詢 Production 階段的版本
-        versions = client.get_latest_versions(name=model_name, stages=["Production"])
-        if not versions:
-            print(f"模型 '{model_name}' 沒有標註為 Production 的版本")
-            return None
-
-        version_info = versions[0]
-        version_number = version_info.version
-        print(f"模型 '{model_name}' 的 Production 版本為：{version_number}")
-
-        # 載入模型
-        model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
-        print(f"成功載入模型 '{model_name}' 的 Production 版本")
-        return model
-
-    
-    except Exception as e:
-        print(f"載入模型失敗: {e}")
-        return None
-
 
 
 @app.on_event("startup")
