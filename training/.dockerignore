@@ -2,3 +2,4 @@
 training/models
 *.pyc
 __pycache__/
+local_model/

@@ -2,6 +2,7 @@
 
 import glob
 import os
+from contextlib import asynccontextmanager
 from typing import List, Optional
 
 import joblib
@@ -115,17 +116,12 @@ def load_model_from_registry(
         return model, version_number
 
     except Exception as e:
-        print(f"[load_model] failed to load model {model_name} stage {stage}: {e}")
+        print(f"[load_model] failed to load model: {model_name}; stage {stage}: {e}")
         return None, None
 
 
-# --- FastAPI 應用程式實例 ---
-app = FastAPI(title="Time Prediction API", version="1.0")
-
-
-@app.on_event("startup")
-# --- 模型載入 ---
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """
     應用啟動時嘗試載入 Production 模型（快取到全域 MODEL）。
     """
@@ -136,6 +132,13 @@ def startup_event():
         print(
             "[startup] no production model loaded. /predict will return 503 until model is loaded."
         )
+    yield
+    # 釋放資源
+    print("[shutdown] application is shutting down...")
+
+
+# --- FastAPI 應用程式實例 ---
+app = FastAPI(title="Time Prediction API", version="1.0", lifespan=lifespan)
 
 
 # --- API 端點 (Endpoint) ---

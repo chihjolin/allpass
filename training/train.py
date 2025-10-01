@@ -3,12 +3,15 @@ import os
 import shutil
 import time
 from datetime import datetime
+from pathlib import Path
 
 import joblib
 import mlflow
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import yaml
+from dotenv import load_dotenv
 from mlflow.pyfunc import PythonModel
 from mlflow.tracking import MlflowClient
 from sklearn.metrics import r2_score, root_mean_squared_error
@@ -19,7 +22,6 @@ from sqlalchemy import text
 from common.utils.dbcon import engine
 
 # # 載入環境變數(開發測試用)
-# from dotenv import load_dotenv
 # load_dotenv(override=True)
 
 
@@ -55,6 +57,9 @@ print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
 print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 
 model_name = "time_prediction_model"
+base_dir = Path(__file__).parent
+hyperparams_path = base_dir / "hyperparams.yaml"
+
 client = MlflowClient()
 
 
@@ -101,6 +106,7 @@ def main():
         mlflow.log_param("test_data_shape", X_test_scaled.shape)
 
         # 3. 超參數搜尋
+        mlflow.log_artifact(hyperparams_path, artifact_path="config")
         base_params, best_params = train_model(X_train_scaled, y_train)
         mlflow.log_params(base_params)
         mlflow.log_params(best_params)
@@ -194,7 +200,7 @@ def train_model(X_train_scaled, y_train):
         device_params = {
             "tree_method": "gpu_hist",
             "gpu_id": 0,
-            "predictor": "gpu_predictor",
+            "predictor": "cpu_predictor",
         }
     else:
         device_params = {"tree_method": "hist"}
@@ -204,17 +210,9 @@ def train_model(X_train_scaled, y_train):
     base_xgb = xgb.XGBRegressor(**base_params, n_jobs=max((os.cpu_count() or 2) - 1, 1))
 
     # 定義超參數搜尋空間
-    param_dist = {
-        "n_estimators": [100, 200, 300, 400, 500, 800, 1000],
-        "max_depth": [3, 4, 5, 6, 7, 8, 10],
-        "learning_rate": [0.01, 0.03, 0.05, 0.1, 0.15, 0.2],
-        "subsample": [0.8, 0.85, 0.9, 0.95, 1.0],
-        "colsample_bytree": [0.8, 0.85, 0.9, 0.95, 1.0],
-        "min_child_weight": [1, 3, 5, 7],
-        "gamma": [0, 0.1, 0.2, 0.3, 0.4],
-        "reg_alpha": [0, 0.1, 0.5, 1.0],
-        "reg_lambda": [0, 0.1, 0.5, 1.0, 2.0],
-    }
+    with open(hyperparams_path) as f:
+        param_dist = yaml.safe_load(f)
+    print(param_dist)
 
     # 建立 KFold 交叉驗證器
     cv = KFold(n_splits=5, shuffle=True, random_state=42)
@@ -240,7 +238,7 @@ def train_model(X_train_scaled, y_train):
 
     print(f"最佳 RMSE: {(-best_score)**0.5:.4f}")
 
-    return base_params, random_search.best_params_
+    return base_params, best_params
 
 
 def train_ensemble(X_train_scaled, y_train, base_params, best_params, n_models=5):
