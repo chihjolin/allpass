@@ -174,38 +174,38 @@ services:
       timeout: 5s
       retries: 5
 
-  #Training:
-  training:
-    build:
-      context: .
-      dockerfile: training/Dockerfile
-    container_name: allpass_training_container
-    env_file:
-      - ./.env
-    volumes:
-      - ./training/hyperparams.yaml:/app/training/hyperparams.yaml
-    networks:
-      - allpass-network
-    depends_on:
-      postgis:
-        condition: service_healthy
-      # etl:
-      #   condition: service_completed_successfully   # 等ETL成功才啟動
-      minio:
-        condition: service_healthy
-      mlflow:
-        condition: service_healthy
-    runtime: nvidia # 啟用 NVIDIA runtime: 讓容器拿到 GPU
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all #允許 container 存取所有 GPU
-    #新增 deploy 區塊(docker swarm)以請求 GPU 資源
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: "all"
-              capabilities: [ gpu ]
+  # #Training:
+  # training:
+  #   build:
+  #     context: .
+  #     dockerfile: training/Dockerfile
+  #   container_name: allpass_training_container
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     - ./training/hyperparams.yaml:/app/training/hyperparams.yaml
+  #   networks:
+  #     - allpass-network
+  #   depends_on:
+  #     postgis:
+  #       condition: service_healthy
+  #     # etl:
+  #     #   condition: service_completed_successfully   # 等ETL成功才啟動
+  #     minio:
+  #       condition: service_healthy
+  #     mlflow:
+  #       condition: service_healthy
+  #   runtime: nvidia # 啟用 NVIDIA runtime: 讓容器拿到 GPU
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all #允許 container 存取所有 GPU
+  #   #新增 deploy 區塊(docker swarm)以請求 GPU 資源
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: "all"
+  #             capabilities: [ gpu ]
 
   #Time_Prediction
   time_prediction:

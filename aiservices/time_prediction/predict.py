@@ -1,6 +1,7 @@
 # aiservices/time_prediction/predict.py
 
 import glob
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -14,109 +15,129 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from mlflow.tracking import MlflowClient
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 load_dotenv(override=True)
 
-# ------------ MLflow / MinIO 設定 ------------
-MLFLOW_HOST = os.getenv("MLFLOW_HOST", "mlflow")
-MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5000")
-MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
-mlflow.set_tracking_uri(MLFLOW_URI)
 
-# Minio artifact store
-MINIO_HOST = os.getenv("MINIO_HOST")
-MINIO_PORT = os.getenv("MINIO_PORT")
-MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER")
-MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD")
-# MINIO_BUCKET_NAME=os.getenv("MINIO_BUCKET_NAME")
+def init_mlflow():
+    # ------------ MLflow / MinIO 設定 ------------
+    MLFLOW_HOST = os.getenv("MLFLOW_HOST", "mlflow")
+    MLFLOW_PORT = os.getenv("MLFLOW_PORT", "5000")
+    MLFLOW_URI = f"http://{MLFLOW_HOST}:{MLFLOW_PORT}"
+    mlflow.set_tracking_uri(MLFLOW_URI)
+    logger.info(f"MLflow URI: {mlflow.get_tracking_uri()}")
 
-# 設定 MLflow 要存取 S3 (MinIO) 的環境變數（必須在載入 model 前設定)
-AWS_ACCESS_KEY_ID = MINIO_ROOT_USER
-AWS_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD
-MLFLOW_S3_ENDPOINT_URL = f"http://{MINIO_HOST}:{MINIO_PORT}"
+    # Minio artifact store
+    MINIO_HOST = os.getenv("MINIO_HOST")
+    MINIO_PORT = os.getenv("MINIO_PORT")
+    MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER")
+    MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD")
+    # MINIO_BUCKET_NAME=os.getenv("MINIO_BUCKET_NAME")
 
-# 設定環境變數: MLflow 讀 artifact store 設定會讀環境變數
-os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
-os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
-# os.environ["MLFLOW_ARTIFACT_URI"] = f"s3://{MINIO_BUCKET_NAME}"
+    # 設定 MLflow 要存取 S3 (MinIO) 的環境變數（必須在載入 model 前設定)
+    if MINIO_HOST and MINIO_PORT and MINIO_ROOT_USER and MINIO_ROOT_PASSWORD:
+        os.environ["AWS_ACCESS_KEY_ID"] = MINIO_ROOT_USER
+        os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_ROOT_PASSWORD
+        os.environ["MLFLOW_S3_ENDPOINT_URL"] = f"http://{MINIO_HOST}:{MINIO_PORT}"
+        logger.info(f"AWS Access Key: {os.environ.get('AWS_ACCESS_KEY_ID')}")
+        logger.info(f"AWS Secret Key: {os.environ.get('AWS_SECRET_ACCESS_KEY')}")
+        logger.info(f"MLflow S3 Endpoint: {os.environ.get('MLFLOW_S3_ENDPOINT_URL')}")
+    else:
+        logger.warning(
+            "MinIO environment variables not fully set; MLflow may not access artifacts"
+        )
 
-print("MLflow tracking URI:", mlflow.get_tracking_uri())
-print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
-print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
-print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
+    return MlflowClient()
 
-client = MlflowClient()
-model_name = "time_prediction_model"
+    # print("MLflow tracking URI:", mlflow.get_tracking_uri())
+    # print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
+    # print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
+    # print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
+
+
+# client = MlflowClient()
+client = None
+model_name = os.getenv("TIME_PREDICTION_MODEL_NAME")
+logger.info(f"model_name: {model_name}")
 
 # Global cached model and version
 MODEL = None
 MODEL_VERSION = None
+Features = None
 
 
-# --- Pydantic 模型定義 API 的輸入格式 ---
-# 這裡的欄位「必須」跟你訓練時的特徵完全對應
-class Features(BaseModel):
-    avg_temp: float
-    avg_rh: float
-    max_precip: float
-    distance: float
-    elevation_range: float
-    elevation_change: float
-    elevation_gain: float
-    elevation_loss: float
-    high_elevation: float
-    max_slope_percent: float
-    max_slope_degrees: float
-    slope_std_dev: float
-    slope_variance: float
-    max_slope_lat: float
-    max_slope_lon: float
-    slope_neg15: float
-    slope_neg15_neg10: float
-    slope_neg10_neg5: float
-    slope_neg5_neg1: float
-    slope_neg1_1: float
-    slope_1_5: float
-    slope_5_10: float
-    slope_10_15: float
-    slope_over15: float
-    accumulated_time_seconds: float
-    accumulated_distance: float
+# # --- Pydantic 模型定義 API 的輸入格式 ---
+# # 這裡的欄位「必須」跟訓練時的特徵完全對應
+# class Features(BaseModel):
+#     avg_temp: float
+#     avg_rh: float
+#     max_precip: float
+#     distance: float
+#     elevation_range: float
+#     elevation_change: float
+#     elevation_gain: float
+#     elevation_loss: float
+#     high_elevation: float
+#     max_slope_percent: float
+#     max_slope_degrees: float
+#     slope_std_dev: float
+#     slope_variance: float
+#     max_slope_lat: float
+#     max_slope_lon: float
+#     slope_neg15: float
+#     slope_neg15_neg10: float
+#     slope_neg10_neg5: float
+#     slope_neg5_neg1: float
+#     slope_neg1_1: float
+#     slope_1_5: float
+#     slope_5_10: float
+#     slope_10_15: float
+#     slope_over15: float
+#     accumulated_time_seconds: float
+#     accumulated_distance: float
 
 
 # --------------- Helper: 載入 Model ---------------
-def load_model_from_registry(
-    model_name: str, stage: str = "Production", wait: bool = False
-):
+def load_model_from_registry(model_name: str, stage: str = "Production"):
     """
     從 MLflow Registry 載入 models:/{name}/{stage}。
     Args:
         model_name (str): 模型註冊名稱
         stage(str): Staging/Production/Archived
-        wait(bool): 是否等待
     Returns:
        回傳 (model, version)；若找不到回傳 (None, None)。
     """
+    global client
+    if client is None:
+        client = init_mlflow()
     try:
         # 查詢 stage 階段的版本
         versions = client.get_latest_versions(name=model_name, stages=[stage])
         if not versions:
-            print(f"[load_model] no version in stage {stage} for model {model_name}")
+            logger.warning(f"No version found for {model_name}:{stage}")
+            # print(f"[load_model] no version in stage {stage} for model {model_name}")
             return None, None
 
         version_info = versions[0]
         version_number = version_info.version
         model_uri = f"models:/{model_name}/{stage}"
-        print(f"[load_model] loading {model_uri} (version {version_number}) ...")
+        logger.info(f"loading {model_uri} (version {version_number}) ...")
+        # print(f"[load_model] loading {model_uri} (version {version_number}) ...")
         # 載入模型
         model = mlflow.pyfunc.load_model(model_uri)
-        print(f"[load_model] loaded model stage{stage}, version {version_number}")
+        logger.info(
+            f"Loaded model {model_name} (version: {version_number}) from stage {stage}"
+        )
+        # print(f"Loaded model {model_name} (version: {version_number}) from stage {stage}")
         return model, version_number
 
     except Exception as e:
-        print(f"[load_model] failed to load model: {model_name}; stage {stage}: {e}")
+        logger.error(f"Load model failed: {model_name}; stage {stage}: {e}")
+        # print(f"[load_model] failed to load model: {model_name}; stage {stage}: {e}")
         return None, None
 
 
@@ -125,16 +146,33 @@ async def lifespan(app: FastAPI):
     """
     應用啟動時嘗試載入 Production 模型（快取到全域 MODEL）。
     """
-    global MODEL, MODEL_VERSION
-    print("[startup] trying to load model from registry ...")
+    # 在模組層定義了 MODEL = None；要在函式內讀/寫需加 global
+    global MODEL, MODEL_VERSION, Features
+    logger.info("[startup]Loading production model on startup...")
+    # print("[startup] trying to load model from registry ...")
     MODEL, MODEL_VERSION = load_model_from_registry(model_name, stage="Production")
     if MODEL is None:
-        print(
-            "[startup] no production model loaded. /predict will return 503 until model is loaded."
+        raise HTTPException(
+            status_code=404,
+            detail=f"[startup] no production model loaded. /predict will return 503 until model is loaded.",
         )
+    # 根據模型內 pipeline["features"] 動態建立 Pydantic schema
+    py_model = getattr(MODEL._model_impl, "python_model", None)
+    if py_model is None or not hasattr(py_model, "pipeline"):
+        raise HTTPException(
+            status_code=500, detail="Loaded model has no pipeline attribute."
+        )
+    feature_list = py_model.pipeline["features"]
+    # feature_list = MODEL.pipeline["features"]
+    Features = create_model(
+        "Features",
+        **{f: (float, ...) for f in feature_list},
+    )
+    logger.info(f"Dynamically created Features model with {len(feature_list)} fields")
+    logger.info(f"Model features: {feature_list}")
     yield
     # 釋放資源
-    print("[shutdown] application is shutting down...")
+    logger.info("App shutdown complete.")
 
 
 # --- FastAPI 應用程式實例 ---
@@ -147,7 +185,10 @@ def read_root():
     return {
         "status": "Time Prediction API is running.",
         "mlflow_uri": mlflow.get_tracking_uri(),
-        "model_loaded": MODEL_VERSION,
+        "model_loaded_version": MODEL_VERSION,
+        "num_features": (
+            len(MODEL._model_impl.python_model.pipeline["features"]) if MODEL else None
+        ),
     }
 
 
@@ -156,13 +197,21 @@ def reload_model(stage: Optional[str] = "Production"):
     """
     HTTP endpoint to force reload the model from registry (useful after model version promotion).
     """
-    global MODEL, MODEL_VERSION
-    model, ver = load_model_from_registry(model_name, stage=stage)
-    if model is None:
+    global MODEL, MODEL_VERSION, Features
+    MODEL, MODEL_VERSION = load_model_from_registry(model_name, stage=stage)
+    if MODEL is None:
         raise HTTPException(
             status_code=404, detail=f"No model found for {model_name} stage {stage}"
         )
-    MODEL, MODEL_VERSION = model, ver
+
+    py_model = getattr(MODEL._model_impl, "python_model", None)
+    if py_model is None or not hasattr(py_model, "pipeline"):
+        raise HTTPException(
+            status_code=500, detail="Loaded model has no pipeline attribute."
+        )
+    feature_list = py_model.pipeline["features"]
+    # feature_list = MODEL.pipeline["features"]
+    Features = create_model("Features", **{f: (float, ...) for f in feature_list})
     return {
         "status": "reloaded",
         "model": model_name,
@@ -172,29 +221,37 @@ def reload_model(stage: Optional[str] = "Production"):
 
 
 @app.post("/predict/")
-def predict(features: Features):
+def predict(features: dict):
     """
     使用 cached MODEL 進行預測。
     """
-    global MODEL
-    if MODEL is None:
+    global MODEL, Features
+    if MODEL is None or Features is None:
         raise HTTPException(
             status_code=503,
             detail="Model not loaded. Call /reload-model or wait for startup load.",
         )
 
     try:
-        # Pydantic -> DataFrame
-        input_df = pd.DataFrame([features.model_dump()])
+        # 使用動態 Pydantic 驗證輸入(驗證、型別轉換、欄位順序、未來擴充)
+        validated = Features(**features)
+
+        # Pydantic -> model_dump(): Python dict -> DataFrame
+        input_df = pd.DataFrame([validated.model_dump()])
 
         # 直接使用 mlflow pyfunc model 的 predict
-        preds = MODEL.predict(input_df)  # 可能是 numpy array 或 list
+        preds = MODEL.predict(input_df)  # 常見輸出可能是 numpy array 或 list
 
+        # 將任何 shape 的輸出攤平成 1-d array
         arr = np.array(preds).ravel()
+
         # 支援多筆或單筆輸入。這裡假設單筆輸入，回傳第一個預測值。
         final_pred = float(arr[0]) if arr.size > 0 else None
 
         return {"predicted_spend_time_seconds": final_pred, "raw": arr.tolist()}
-
+    except ValueError as e:
+        # FastAPI 會把 request body 的 JSON parse 成 Features（Pydantic model）並做型別驗證（若失敗回 422）
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.exception("Prediction failed")
+        raise HTTPException(status_code=500, detail="Internal model error")
