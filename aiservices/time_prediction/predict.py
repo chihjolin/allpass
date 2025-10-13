@@ -53,13 +53,7 @@ def init_mlflow():
 
     return MlflowClient()
 
-    # print("MLflow tracking URI:", mlflow.get_tracking_uri())
-    # print("MLflow S3 Endpoint:", os.environ.get("MLFLOW_S3_ENDPOINT_URL"))
-    # print("AWS Access Key:", os.environ.get("AWS_ACCESS_KEY_ID"))
-    # print("AWS Secret Key:", os.environ.get("AWS_SECRET_ACCESS_KEY"))
 
-
-# client = MlflowClient()
 client = None
 model_name = os.getenv("TIME_PREDICTION_MODEL_NAME")
 logger.info(f"model_name: {model_name}")
@@ -68,37 +62,6 @@ logger.info(f"model_name: {model_name}")
 MODEL = None
 MODEL_VERSION = None
 Features = None
-
-
-# # --- Pydantic 模型定義 API 的輸入格式 ---
-# # 這裡的欄位「必須」跟訓練時的特徵完全對應
-# class Features(BaseModel):
-#     avg_temp: float
-#     avg_rh: float
-#     max_precip: float
-#     distance: float
-#     elevation_range: float
-#     elevation_change: float
-#     elevation_gain: float
-#     elevation_loss: float
-#     high_elevation: float
-#     max_slope_percent: float
-#     max_slope_degrees: float
-#     slope_std_dev: float
-#     slope_variance: float
-#     max_slope_lat: float
-#     max_slope_lon: float
-#     slope_neg15: float
-#     slope_neg15_neg10: float
-#     slope_neg10_neg5: float
-#     slope_neg5_neg1: float
-#     slope_neg1_1: float
-#     slope_1_5: float
-#     slope_5_10: float
-#     slope_10_15: float
-#     slope_over15: float
-#     accumulated_time_seconds: float
-#     accumulated_distance: float
 
 
 # --------------- Helper: 載入 Model ---------------
@@ -148,8 +111,7 @@ async def lifespan(app: FastAPI):
     """
     # 在模組層定義了 MODEL = None；要在函式內讀/寫需加 global
     global MODEL, MODEL_VERSION, Features
-    logger.info("[startup]Loading production model on startup...")
-    # print("[startup] trying to load model from registry ...")
+    logger.info("[startup] Starting lifespan: loading production model on startup...")
     MODEL, MODEL_VERSION = load_model_from_registry(model_name, stage="Production")
     if MODEL is None:
         raise HTTPException(
@@ -172,7 +134,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Model features: {feature_list}")
     yield
     # 釋放資源
-    logger.info("App shutdown complete.")
+    logger.info("Done lifespan: App shutdown complete.")
 
 
 # --- FastAPI 應用程式實例 ---
@@ -226,10 +188,16 @@ def predict(features: dict):
     使用 cached MODEL 進行預測。
     """
     global MODEL, Features
-    if MODEL is None or Features is None:
+    # logger.info(f"DEBUG: MODEL is {type(MODEL)}, Features is {type(Features)}")
+    if MODEL is None:
         raise HTTPException(
             status_code=503,
             detail="Model not loaded. Call /reload-model or wait for startup load.",
+        )
+    if Features is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Retrieve Features failed",
         )
 
     try:
