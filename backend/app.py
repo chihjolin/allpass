@@ -6,11 +6,11 @@ from flask_restful import Api
 from resources.health import Health
 from resources.login import Login
 from resources.predictions import Predictions
+from resources.profile import Profile
 from resources.register import RegisterUser
 from resources.tiles import Tiles
 from resources.trails import Trail, Trails
 from resources.weather import Weather
-from resources.profile import Profile
 
 # from backend.resources.health import Health
 # from backend.resources.login import Login
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     host = os.getenv("FLASK_HOST", "0.0.0.0")
     debug = bool(os.getenv("FLASK_DEBUG", "TRUE"))
     app.run(host=host, port=port, debug=debug)
-    #app.run(host=host, port=5050, debug=debug)
+    # app.run(host=host, port=5050, debug=debug)

@@ -206,28 +206,28 @@ services:
   #             count: "all"
   #             capabilities: [ gpu ]
 
-  # #Time_Prediction
-  # time_prediction:
-  #   build:
-  #     context: .
-  #     dockerfile: aiservices/time_prediction/Dockerfile
-  #   container_name: allpass_time_prediction_container
-  #   env_file:
-  #     - ./.env
-  #   # volumes:
-  #   #   - ./models:/app/models:ro #ro (read-only)
-  #   networks:
-  #     - allpass-network
-  #   ports:
-  #     - "${TIME_PREDICTION_HOST_PORT:-8000}:${TIME_PREDICTION_PORT:-8000}"
-  #   # depends_on:
-  #   #   training:
-  #   #     condition: service_completed_successfully # 等training成功才啟動
-  #   depends_on:
-  #     minio:
-  #       condition: service_healthy
-  #     mlflow:
-  #       condition: service_healthy
+  #Time_Prediction
+  time_prediction:
+    build:
+      context: .
+      dockerfile: aiservices/time_prediction/Dockerfile
+    container_name: allpass_time_prediction_container
+    env_file:
+      - ./.env
+    # volumes:
+    #   - ./models:/app/models:ro #ro (read-only)
+    networks:
+      - allpass-network
+    ports:
+      - "${TIME_PREDICTION_HOST_PORT:-8000}:${TIME_PREDICTION_PORT:-8000}"
+    # depends_on:
+    #   training:
+    #     condition: service_completed_successfully # 等training成功才啟動
+    depends_on:
+      minio:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
 
 volumes:
   postgis_data:

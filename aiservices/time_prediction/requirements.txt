@@ -8,5 +8,6 @@ xgboost==2.1.1
 numpy==1.26.4
 redis
 mlflow==3.3.2
+boto3
 pytest
 httpx

@@ -11,8 +11,8 @@ import mlflow
 import numpy as np
 import pandas as pd
 
-# 載入環境變數(開發測試用)
-from dotenv import load_dotenv
+# # 載入環境變數(開發測試用)
+# from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from mlflow.tracking import MlflowClient
 from pydantic import BaseModel, create_model
@@ -20,7 +20,7 @@ from pydantic import BaseModel, create_model
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-load_dotenv(override=True)
+# load_dotenv(override=True)
 
 
 def init_mlflow():
@@ -183,7 +183,7 @@ def reload_model(stage: Optional[str] = "Production"):
 
 
 @app.post("/predict/")
-def predict(features: dict):
+def predict(features: dict, simulate_error: bool = False):
     """
     使用 cached MODEL 進行預測。
     """
@@ -201,6 +201,8 @@ def predict(features: dict):
         )
 
     try:
+        if simulate_error:
+            raise RuntimeError("Simulated model error")
         # 使用動態 Pydantic 驗證輸入(驗證、型別轉換、欄位順序、未來擴充)
         validated = Features(**features)
 

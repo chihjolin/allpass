@@ -11,7 +11,10 @@ from aiservices.time_prediction.predict import app, load_model_from_registry
 
 # 開發測試用
 load_dotenv(override=True)
-MODEL_NAME = os.getenv("TIME_PREDICTION_MODEL_NAME")
+time_prediction_host = os.getenv("TIME_PREDICTION_HOST")
+time_prediction_port = os.getenv("TIME_PREDICTION_PORT")
+BASE_URL = f"http://{time_prediction_host}:{time_prediction_port}"
+model_name = os.getenv("TIME_PREDICTION_MODEL_NAME")
 
 # @pytest.fixture(scope="session", autouse=True)
 # def setup_env():
@@ -26,11 +29,17 @@ MODEL_NAME = os.getenv("TIME_PREDICTION_MODEL_NAME")
 #     yield
 
 
+# @pytest.fixture(scope="session")
+# def client():
+#     """確保 lifespan (startup/shutdown) 有正確執行"""
+#     with TestClient(app) as c:
+#         yield c
+
+
 @pytest.fixture(scope="session")
-def client():
-    """確保 lifespan (startup/shutdown) 有正確執行"""
-    with TestClient(app) as c:
-        yield c
+def api_url():
+    """提供 container 的 base URL"""
+    return BASE_URL
 
 
 @pytest.fixture(scope="session")
