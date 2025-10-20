@@ -8,5 +8,6 @@ src/allpass_common.egg-info/top_level.txt
 src/common/__init__.py
 src/common/utils/__init__.py
 src/common/utils/dbcon.py
+src/common/utils/logger.py
 src/common/utils/redis_client.py
 src/common/utils/redis_utils.py

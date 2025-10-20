@@ -11,6 +11,7 @@ Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 Requires-Dist: sqlalchemy
 Requires-Dist: psycopg2-binary
+Requires-Dist: asyncpg
 Requires-Dist: python-dotenv
 Requires-Dist: redis
 
