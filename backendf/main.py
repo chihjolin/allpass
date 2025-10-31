@@ -3,6 +3,7 @@ import os
 
 # 匯入各個 router
 from api.health import router as health_router
+from api.login import router as login_router
 from api.register import router as register_router
 from api.trails import router as trails_router
 from fastapi import FastAPI
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/health", tags=["Health"])
 app.include_router(trails_router, prefix="/api/trails", tags=["Trails"])
 app.include_router(register_router, prefix="/api/register", tags=["Register"])
+app.include_router(login_router, prefix="/api/login", tags=["Login"])
 
 
 @app.get("/")
