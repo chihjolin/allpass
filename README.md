@@ -6,7 +6,7 @@
 
 ## 系統架構
 
-![System Architecture](docs/architecture.png)
+![System Architecture](docs/architecture_1.1.png)
 
 系統包含以下主要模組：
 

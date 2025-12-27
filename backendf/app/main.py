@@ -2,10 +2,10 @@ import logging
 import os
 
 # 匯入各個 router
-from api.health import router as health_router
-from api.login import router as login_router
-from api.register import router as register_router
-from api.trails import router as trails_router
+from app.api.health import router as health_router
+from app.api.login import router as login_router
+from app.api.register import router as register_router
+from app.api.trails import router as trails_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
