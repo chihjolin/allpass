@@ -19,8 +19,10 @@ logger.info("開始設定資料庫連線: dbcon")
 
 # ---------------------------------------------------
 # 讀取 .env 設定（僅本地開發用）
+# load_dotenv() 只看 working directory，不看套件位置
 # ---------------------------------------------------
 load_dotenv(override=True)
+print("dotenv loaded from:", os.getcwd())
 # dotenv_path = Path(__file__).parent / ".env"
 # load_dotenv(dotenv_path=dotenv_path, override=True)
 
