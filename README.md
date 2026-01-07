@@ -2,26 +2,34 @@
 
 本專案是一個端到端的 **AI 驅動登山時間預測平台**，結合 **前端應用、後端 API、資料庫、ETL 工作流、模型訓練與部署、監控平台**，完整實現 **模型生命週期 (ML Lifecycle)**。
 
+目前專案主線：
+- 🎯 核心功能：登山路線時間預測
+- 🔁 架構演進：Flask → FastAPI (async, high throughput) 重構中
+- 🚀 擴充方向：雲端部署、維運監控、推薦系統、LLM 個人化分析（規劃中）
+
 ---
 
 ## 系統架構
 
-![System Architecture](docs/architecture_1.1.png)
+![System Architecture](docs/architecture_1.2.png)
+
+核心資料流：
+* Offline(Batch / Training Path): 爬蟲 → 原始資料 (PostGIS) → 特徵工程 (GeoPandas) → 模型訓練 (XGBoost) → 註冊 (MLflow)
+* Online(Serving Path): 使用者 (React) → Nginx → 預測API (Flask → FastAPI 重構中) → Redis 快取線上特徵 -> 推論服務 (FastAPI)  → 回傳預測
 
 系統包含以下主要模組：
 
 1. **前端應用 (Frontend Web App)**
-   - 技術：React、Leaflet + OpenStreetMap、PWA
+   - 技術：React、Leaflet + OpenStreetMap　+ Nginx
    - 功能：登山路線顯示、使用者上傳 GPX、查詢預測結果
 
-2. **後端 API (Flask Backend)**
-   - 技術：Flask + SQLAlchemy + Nginx (API Gateway)
+2. **後端 API (Backend API)**
+   - 技術：
+      - Current: Flask + SQLAlchemy
+      - Refactoring: FastAPI
    - 功能：
      - `/api/gpx_uploads`: 上傳 GPX 軌跡
      - `/api/predictions`: 即時路段時間預測
-     - `/api/reports`: LLM 報告生成
-     - `/api/recommendations`: 個人化路線推薦
-   - API Gateway 功能：JWT 驗證、Rate Limit、API Log
 
 3. **資料庫 (Database Layer)**
    - PostgreSQL + PostGIS：地理空間資料存放 (登山路線、軌跡)
@@ -34,17 +42,13 @@
    - ETL 容器程式位於 `etl/`
 
 5. **模型訓練與管理 (Model Lifecycle)**
-   - 訓練 (`training/`)：支援 Scikit-learn、XGBoost、KMeans、DBSCAN
+   - 訓練 (`training/`)：支援 Scikit-learn、XGBoost
    - MLflow (`services/mlflow/`)：模型註冊、版本管理
-   - 特徵庫：Feast + Milvus
    - 模型部署：REST API 容器化服務 (`aiservices/time_prediction`)
 
-6. **維運監控平台 (MLOps Monitoring)**
-   - Prometheus：指標收集
-   - Grafana：儀表板
-   - Loki：日誌管理
-   - Sentry：錯誤追蹤
-   - AlertManager：自動通知
+6. **維運監控平台 (Monitoring & Alerting)[規劃中]**
+   - Metrics: Prediction Latency, RMSE Drift
+   - Infra: AWS CloudWatch
 
 ---
 
@@ -57,73 +61,86 @@
    - 存放於 PostgreSQL + PostGIS  
 
 2. **資料處理 (Data Processing)**  
-   - ETL 工作流 (Airflow)  
+   - ETL 工作流
    - 特徵工程 (GeoPandas, Shapely)  
 
-3. **特徵存放 (Feature Store)**  
-   - Feast (結構化特徵)  
-   - Milvus (向量特徵，支援 LLM embedding)  
-
-4. **模型訓練 (Model Training)**  
-   - Scikit-learn, XGBoost, KMeans/DBSCAN  
+3. **模型訓練 (Model Training)**  
+   - Scikit-learn, XGBoost
    - Cross-validation  
    - Logging 至 MLflow  
 
-5. **模型管理 (Model Management)**  
+4. **模型管理 (Model Management)**  
    - MLflow Model Registry  
-   - GitLab CI/CD 自動化部署  
 
-6. **模型服務 (Model Serving)**  
-   - REST API 容器化 (Docker + Flask)  
-   - Redis 線上快取，降低查詢延遲  
+5. **模型服務 (Model Serving)**  
+   - REST API 容器化 (Docker + FastAPI)  
+   - Redis 線上快取，降低查詢延遲
 
-7. **監控與告警 (Monitoring & Alerting)**  
-   - Prometheus + Grafana (效能指標)  
-   - Loki (日誌)  
-   - Sentry (錯誤監控)  
-   - AlertManager (異常通知)  
-
-### 模型生命週期流程圖 (Mermaid)
-
-```mermaid
-flowchart TD
-    A["資料收集 Data Collection"] -->|GPX 上傳 / 爬蟲| B["資料處理 Data Processing"]
-    B -->|清洗、特徵工程| C["特徵存放 Feature Store"]
-    C -->|Feast| C1["Milvus 特徵向量庫"]
-    C --> D["模型訓練 Model Training"]
-    D -->|MLflow Logging| E["模型管理 Model Registry"]
-    E -->|版本管理 / 審批| F["模型部署 Model Serving"]
-    F -->|REST API / Docker 容器| G["即時預測 Online Inference"]
-    G -->|回寫快取| H["Redis Online Store"]
-    G -->|監控數據| I["監控與告警 Monitoring & Alerting"]
-    I -->|效能指標| J["Prometheus + Grafana"]
-    I -->|錯誤日誌| K["Sentry + Loki"]
-    I -->|異常通知| L["AlertManager"]
-```
+6. **維運監控平台 (Monitoring & Alerting)[規劃中]**
+   - Metrics: Prediction Latency, RMSE Drift
+   - Infra: AWS CloudWatch
 
 ---
 
 ## 專案目錄結構
 ```markdown
-allpass
-├── aiservices        # AI 模型服務
-│   ├── llm
-│   ├── recommendation
-│   └── time_prediction
-├── backend           # Flask 後端 API
-├── common            # 共用程式模組
-├── db                # PostgreSQL / PostGIS 初始化
-├── etl               # 資料處理 (Airflow + Jobs)
-├── frontend          # React + PWA 前端
-├── services          # 外部服務 (Airflow, MLflow, Prometheus...)
-├── training          # 模型訓練
+allpass/
+├── aiservices/          # 線上 AI 推論服務（Model Serving）
+│   ├── llm/             # 擴充功能:LLM個人化報表(規劃導入)
+│   ├── recommendation/  # 擴充功能:推薦系統(規劃導入)
+│   └── time_prediction/ # 登山時間預測模型 API
+├── backend/             # 既有 Flask API（穩定版本）
+├── backendf/            # FastAPI API（重構中，將取代 backend）  
+├── common/              # 共用模組（config, schemas, utils）
+├── db/                  # PostgreSQL / PostGIS 初始化與 schema
+├── doc/                 # 系統設計與技術文件
+├── etl/                 # 資料蒐集 / 清洗 / 特徵工程 (Jobs)
+├── frontend/            # React前端
+├── migrations/          # Alembic migrations
+├── services/            # 外部服務整合（Airflow, MLflow, monitoring）
+├── training/            # 模型訓練流程（offline）
+├── alembic.ini 
 ├── docker-compose.yml
+├── pytest.ini 
 └── README.md
 ```
 
 ---
 
+---
+
+## 系統分層說明
+```markdown
+- 資料
+  - etl/
+  - db/
+  - migrations/
+
+- 模型生命週期
+  - training/        # Model training
+  - aiservices/      # Online inference / serving
+
+- 應用
+  - backend/         # Flask (current)
+  - backendf/        # FastAPI (refactoring target)
+  - frontend/
+
+- Infra
+  - services/         # MLOps & Orchestration (Airflow, MLflow, monitoring)
+  - docker-compose.yml
+```
+這個專案採用 資料 → 模型 → 服務 → 前端 的分層設計，
+目前正在將既有 Flask API 重構為 FastAPI，
+並將 AI 模型訓練、推論與應用層明確拆分，
+以利未來擴充推薦系統與 LLM 個人化分析功能。
+
+---
+
+
 ## 快速啟動
+> Note:
+> 本專案使用 Docker Compose 啟動，
+> 請確認本機 3000 / 5000 / 5001 port 未被佔用。
 
 ### 1. 建立環境
 ```markdown
@@ -135,9 +152,7 @@ docker-compose up -d
 ### 2. 啟動服務
 - 前端： http://localhost:3000  
 - 後端 API： http://localhost:5000  
-- MLflow： http://localhost:5001  
-- Airflow： http://localhost:8080  
-- Grafana： http://localhost:3001  
+- MLflow： http://localhost:5001 
 
 ### 3. 測試 API
 ```markdown
@@ -149,20 +164,21 @@ curl -X POST http://localhost:5000/api/predictions \
 ---
 
 ## 技術棧 (Tech Stack)
-- **Frontend**: React, PWA, Leaflet, Nginx  
-- **Backend**: Flask, SQLAlchemy, REST API  
+- **Frontend**: React, Leaflet, Nginx  
+- **Backend**: Flask, FastAPI, SQLAlchemy 
 - **Database**: PostgreSQL + PostGIS, Redis  
-- **ETL**: Airflow, GeoPandas, Shapely, BeautifulSoup  
-- **ML Training**: Scikit-learn, XGBoost, KMeans, DBSCAN  
-- **Model Management**: MLflow, Feast, Milvus  
-- **DevOps / MLOps**: Docker, GitLab CI/CD, Prometheus, Grafana, Loki, Sentry
+- **ETL**: GeoPandas, Shapely, BeautifulSoup  
+- **ML Training**: Scikit-learn, XGBoost  
+- **Model Management**: MLflow  
+- **DevOps / MLOps**: Docker
 
 ---
 
 ## 專案進度 (Project Progress)
+🎯核心目標：建立可持續擴充的登山時間預測 AI 平台，目前優先聚焦：Prediction Accuracy、Serving Latency、系統穩定性
 ### 已完成 (✅)
-- ✅ 前端應用 (React + Leaflet + PWA)
-- ✅ 後端 API (Flask + SQLAlchemy + Nginx Gateway 基礎)
+- ✅ 前端應用 (React + Leaflet + Nginx (static file server & reverse proxy))
+- ✅ 後端 API (Flask + SQLAlchemy)
   - /api/gpx_uploads: 上傳 GPX
   - /api/predictions: 即時路段時間預測
 - ✅ 資料庫
@@ -172,19 +188,20 @@ curl -X POST http://localhost:5000/api/predictions \
   - 爬蟲 (BeautifulSoup)
   - 資料清洗與特徵工程 (GeoPandas + Shapely)
 - ✅ Training 容器
+- ✅ MLflow 模型管理 (Model Registry, Experiment Tracking)
 - ✅ Model Service 容器
 
+
 ### 開發中 (🚧)
-- 🚧 MLflow 模型管理 (Model Registry, Experiment Tracking)
+- 🚧 後端框架遷移(Flask → FastAPI)
 - 🚧 後端效能指標計算 (RMSE / Latency) 與資料庫紀錄
-- 🚧 Prometheus + Grafana 模型效能監控 (含 AlertManager)
+
 
 ### 規劃中 (📌)
-- 📌 Airflow 工作排程 (觸發 ETL 與模型訓練)
-- 📌 LLM 分析報告生成 (/api/reports)
-- 📌 個人化路線推薦 (/api/recommendations)
 - 📌 CI/CD Pipeline (GitHub Actions + Docker Compose)
-- 📌 API Gateway 功能強化 (JWT, Rate Limit, API Log)
-- 📌 Kubernetes 部署
+- 📌 AWS雲端部署 (EC2 + Docker, S3, CloudWatch...)
+- 📌 Airflow 工作排程 (觸發 ETL 與模型訓練)
+- 📌 LLM 分析報告生成 (/api/llm)
+- 📌 個人化路線推薦 (/api/recommendations)
 
 
