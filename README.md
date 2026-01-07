@@ -20,7 +20,7 @@
 系統包含以下主要模組：
 
 1. **前端應用 (Frontend Web App)**
-   - 技術：React、Leaflet + OpenStreetMap　+ Nginx
+   - 技術：React、Leaflet + OpenStreetMap + Nginx(Static Web Server / Reverse Proxy)
    - 功能：登山路線顯示、使用者上傳 GPX、查詢預測結果
 
 2. **後端 API (Backend API)**
@@ -164,8 +164,8 @@ curl -X POST http://localhost:5000/api/predictions \
 ---
 
 ## 技術棧 (Tech Stack)
-- **Frontend**: React, Leaflet, Nginx  
-- **Backend**: Flask, FastAPI, SQLAlchemy 
+- **Frontend**: React, Nginx(static file server & reverse proxy)  
+- **Backend**: Flask(current), FastAPI(refactoring target), SQLAlchemy
 - **Database**: PostgreSQL + PostGIS, Redis  
 - **ETL**: GeoPandas, Shapely, BeautifulSoup  
 - **ML Training**: Scikit-learn, XGBoost  
@@ -177,7 +177,7 @@ curl -X POST http://localhost:5000/api/predictions \
 ## 專案進度 (Project Progress)
 🎯核心目標：建立可持續擴充的登山時間預測 AI 平台，目前優先聚焦：Prediction Accuracy、Serving Latency、系統穩定性
 ### 已完成 (✅)
-- ✅ 前端應用 (React + Leaflet + Nginx (static file server & reverse proxy))
+- ✅ 前端應用 (React + Leaflet + Nginx)
 - ✅ 後端 API (Flask + SQLAlchemy)
   - /api/gpx_uploads: 上傳 GPX
   - /api/predictions: 即時路段時間預測
