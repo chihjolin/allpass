@@ -138,23 +138,41 @@ allpass/
 
 
 ## 快速啟動
-> Note:
-> 本專案使用 Docker Compose 啟動，
-> 請確認本機 3000 / 5000 / 5001 port 未被佔用。
+> **Note**
+> 本專案使用 **Docker Compose** 啟動多個服務，  
+> 請確認以下 port 未被其他程式佔用：
+>
+> - 80      : Frontend (Nginx)
+> - 5000    : Backend API (FastAPI)
+> - 8000    : Model Inference Service
+> - 5001    : MLflow UI
+> - 5432    : PostgreSQL
+> - 6379    : Redis
+> - 9000    : MinIO Server (S3 API)
+> - 9001    : MinIO Console
 
-### 1. 建立環境
+### 1. 建立與啟動環境
 ```markdown
 git clone https://github.com/chihjolin/allpass.git
 cd allpass
-docker-compose up -d
+docker-compose up -d --build
 ```
+> **說明**  
+> --build：確保 Docker image 與 Dockerfile 同步  
+> 第一次啟動時建議加上；Dockerfile 或 requirements 有變更時，必須加  
+> 若僅重新啟動服務，可使用：  
+> docker-compose up -d
 
-### 2. 啟動服務
-- 前端： http://localhost:3000  
-- 後端 API： http://localhost:5000  
-- MLflow： http://localhost:5001 
 
-### 3. 測試 API
+### 2. 服務存取入口
+- 前端： http://localhost:80  
+- 後端 API： http://localhost:5000
+- 模型推論服務 API:http://localhost:8000   
+- MLflow UI： http://localhost:5001 
+- minio console: http://localhost:9001
+
+
+### 3. API 測試範例
 ```markdown
 curl -X POST http://localhost:5000/api/predictions \
      -H "Content-Type: application/json" \
