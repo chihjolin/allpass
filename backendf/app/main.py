@@ -9,6 +9,7 @@ from common.utils import logger
 
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
+    # 這邊沒有await是可以的嗎?
     print("FastAPI Server Starting...")
     yield
 

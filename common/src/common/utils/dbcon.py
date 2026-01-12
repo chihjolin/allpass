@@ -126,5 +126,5 @@ async def get_async_session():
     - 高併發 I/O
     - 下一單元 AsyncIO
     """
-    async with AsyncSession(async_engine) as session:
-        yield session
+    async with AsyncSession(async_engine) as async_session:
+        yield async_session
