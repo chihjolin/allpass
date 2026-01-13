@@ -2,9 +2,11 @@ fastapi
 pydantic
 uvicorn[standard]
 pydantic
+pydantic-settings
 psycopg2-binary==2.9.10
 sqlalchemy             # ORM 與 core API          
 asyncpg
 python-dotenv          # 如果你有 .env
 alembic
 sqlmodel
+passlib[bcrypt]

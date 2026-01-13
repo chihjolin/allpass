@@ -1,17 +1,17 @@
 from pydantic import BaseModel, EmailStr
 
 
-class UserBase(BaseModel):
+class BaseUser(BaseModel):
     email: EmailStr
     username: str
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseUser):
     password: str
 
 
-class UserRead(UserBase):
-    id: int
+class UserRead(BaseUser):
+    pass
 
 
 class Token(BaseModel):
