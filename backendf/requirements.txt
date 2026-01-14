@@ -6,7 +6,8 @@ pydantic-settings
 psycopg2-binary==2.9.10
 sqlalchemy             # ORM 與 core API          
 asyncpg
-python-dotenv          # 如果你有 .env
+# python-dotenv        # 開發環境載入.env
 alembic
 sqlmodel
-passlib[bcrypt]
+#passlib[bcrypt]
+passlib[argon2]

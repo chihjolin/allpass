@@ -4,7 +4,7 @@ from app.repositories.users import UserRepository  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 
-password_context = CryptContext(schemes=["bcrypt"])
+password_context = CryptContext(schemes=["argon2"])
 
 
 class UserService:
