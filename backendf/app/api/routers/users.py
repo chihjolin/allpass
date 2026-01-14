@@ -1,5 +1,5 @@
-from app.api.dependencies import UserServiceDep
-from app.api.schemas.users import UserCreate, UserRead
+from app.api.dependencies import UserServiceDep  # type: ignore
+from app.api.schemas.users import UserCreate, UserRead  # type: ignore
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/users", tags=["User"])

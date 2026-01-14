@@ -1,6 +1,6 @@
-from app.api.schemas.users import UserCreate
-from app.database.models import User
-from app.repositories.users import UserRepository
+from app.api.schemas.users import UserCreate  # type: ignore
+from app.database.models import Users  # type: ignore
+from app.repositories.users import UserRepository  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,14 +12,14 @@ class UserService:
         self.session = session
         self.repo = UserRepository(session)
 
-    async def add(self, data: UserCreate) -> User:
+    async def add(self, data: UserCreate) -> Users:
         # 1. 業務邏輯檢查
         existing = await self.repo.get_by_email_or_username(data.email, data.username)
         if existing:
             raise ValueError("Email or username already exists")
 
         # 2. 資料轉換 (將 DTO 轉為 Model)
-        user = User(
+        user = Users(
             **data.model_dump(exclude={"password"}),
             password_hash=password_context.hash(data.password),
         )

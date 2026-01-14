@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from app.api.router import master_router
-from core.env import settings
+from app.api.router import master_router  # type: ignore
+from core.env import settings  # type: ignore
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from scalar_fastapi import get_scalar_api_reference

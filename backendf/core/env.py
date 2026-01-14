@@ -1,17 +1,12 @@
 # backendf/core/env.py
 import os
+from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-env = "development"
-
-# 只在開發用
-if env == "development":
-    dotenv_path = Path(__file__).resolve().parents[1] / ".env"
-    load_dotenv(dotenv_path=dotenv_path, override=True)
-    print(f"[DEV] dotenv loaded from: {dotenv_path}")
+BASE_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
@@ -20,6 +15,13 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
+
+    # Pydantic Settings 可以自動讀取 .env(Pydantic 只在「找不到對應環境變數時」才會去讀 .env)
+    model_config = SettingsConfigDict(
+        env_file=os.path.join(BASE_DIR, ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 settings = Settings()  # type: ignore

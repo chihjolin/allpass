@@ -1,8 +1,6 @@
 import logging
-import os
-from pathlib import Path
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -10,6 +8,10 @@ from sqlmodel import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .logger import get_logger
+
+# import os
+# from pathlib import Path
+
 
 # from backendf.core.env import settings  # 或其他 config module
 
@@ -24,7 +26,14 @@ logger.info("開始設定資料庫連線: dbcon")
 def make_engines(user, password, host, port, db, timezone="Asia/Taipei"):
     """
     建立同步 & 非同步 Engine，以及 Session 工廠
-    變數命名盡量與原本保持一致
+    回傳 tuple:(
+        POSTGRES_URL,
+        ASYNC_POSTGRES_URL,
+        engine,
+        async_engine,
+        SessionLocal,
+        AsyncSessionLocal,
+    )
     """
     # -------------------------
     # Connection URL
@@ -35,7 +44,7 @@ def make_engines(user, password, host, port, db, timezone="Asia/Taipei"):
     # -------------------------
     # Logging 印出 URL
     # -------------------------
-    logger.info(f"POSTGRES_URL: {POSTGRES_URL}")
+    logger.info(f"SYNC_POSTGRES_URL: {POSTGRES_URL}")
     logger.info(f"ASYNC_POSTGRES_URL: {ASYNC_POSTGRES_URL}")
 
     # -------------------------
@@ -55,21 +64,27 @@ def make_engines(user, password, host, port, db, timezone="Asia/Taipei"):
         future=True,
     )
 
-    # -------------------------
-    # Session 工廠
-    # -------------------------
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    AsyncSessionLocal = async_sessionmaker(
-        bind=async_engine, autoflush=False, autocommit=False
-    )
+    # # -------------------------
+    # # Session 工廠
+    # # -------------------------
+    # SessionLocal = sessionmaker(
+    #     bind=engine,
+    #     autoflush=False,
+    #     autocommit=False,
+    # )
+    # AsyncSessionLocal = async_sessionmaker(
+    #     bind=async_engine,
+    #     autoflush=False,
+    #     autocommit=False,
+    # )
 
     return (
         POSTGRES_URL,
         ASYNC_POSTGRES_URL,
         engine,
         async_engine,
-        SessionLocal,
-        AsyncSessionLocal,
+        # SessionLocal,
+        # AsyncSessionLocal,
     )
 
 
@@ -160,7 +175,8 @@ def get_async_session(async_engine):
     """
 
     async def _get_async_session():
-        async with AsyncSession(async_engine) as session:
+        # expire_on_commit=False 對於 async 來說很重要，避免存取屬性時觸發隱式 IO
+        async with AsyncSession(async_engine, expire_on_commit=False) as session:
             yield session
 
     return _get_async_session
