@@ -1,4 +1,4 @@
-from app.api.routers import trails, users
+from app.api.routers import trails, users  # type: ignore
 from fastapi import APIRouter
 
 master_router = APIRouter()

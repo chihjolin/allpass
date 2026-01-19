@@ -1,13 +1,14 @@
+from common.utils.logger_config import setup_logging
+
+# logging 設定
+setup_logging()
+
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from app.api.router import master_router  # type: ignore
-from core.env import settings  # type: ignore
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from scalar_fastapi import get_scalar_api_reference
 
-from common.utils import logger
+# from scalar_fastapi import get_scalar_api_reference
 
 
 @asynccontextmanager
@@ -19,6 +20,12 @@ async def lifespan_handler(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan_handler)
 app.include_router(master_router)
+
+
+# Server Running Status
+@app.get("/")
+def read_root():
+    return {"detail": "Welcome to Allpass!"}
 
 
 # import logging

@@ -21,3 +21,4 @@ services/airflow/logs/
 
 #dev
 poetry_kernel/
+logs/

@@ -1,6 +1,5 @@
-import logging
+# import logging
 
-# from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -9,18 +8,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .logger import get_logger
 
-# import os
-# from pathlib import Path
-
-
-# from backendf.core.env import settings  # 或其他 config module
-
-
 # ---------------------------------------------------
 # Logging 設定（共用）
 # ---------------------------------------------------
-logger = get_logger(name=__name__, level=logging.INFO)  # 使用自訂 logger
-logger.info("開始設定資料庫連線: dbcon")
+logger = get_logger(__name__)  # 使用自訂 logger
 
 
 def make_engines(user, password, host, port, db, timezone="Asia/Taipei"):
@@ -35,6 +26,7 @@ def make_engines(user, password, host, port, db, timezone="Asia/Taipei"):
         AsyncSessionLocal,
     )
     """
+    logger.info("開始設定資料庫連線: dbcon")
     # -------------------------
     # Connection URL
     # -------------------------
