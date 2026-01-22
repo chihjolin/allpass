@@ -7,6 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 password_context = CryptContext(schemes=["argon2"])
 
 
+class UserAlreadyExistsError(Exception):
+    pass
+
+
 class UserService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -16,7 +20,8 @@ class UserService:
         # 1. 業務邏輯檢查
         existing = await self.repo.get_by_email_or_username(data.email, data.username)
         if existing:
-            raise ValueError("Email or username already exists")
+            # Service 層丟 domain error
+            raise UserAlreadyExistsError("Email or username already exists")
 
         # 2. 資料轉換 (將 DTO 轉為 Model)
         user = Users(
