@@ -1,7 +1,9 @@
 # import pytest_asyncio
 import os
+import uuid
 
 import pytest
+from app.api.dependencies import get_async_session  # type: ignore
 from app.main import app  # type: ignore
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
@@ -11,11 +13,19 @@ from sqlalchemy.ext.asyncio.engine import AsyncEngine
 # from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
-from common.utils.dbcon import get_async_session, make_engines
+from common.utils.dbcon import get_async_session as async_session_factory
+from common.utils.dbcon import make_engines
 from common.utils.logger import get_logger
 from common.utils.logger_config import setup_logging
 
 # from httpx import ASGITransport, AsyncClient
+
+# ---------------------------------------------------
+# 整體測試流程
+# pytest 啟動 → 載入 .env.test → 建立測試用 async_engine → 建 schema →
+# 每個 test function 用 override 把 app 原本的 DB session 換成測試 DB →
+# test 結束後 drop schema
+# ---------------------------------------------------
 
 
 # ---------------------------------------------------
@@ -25,7 +35,7 @@ from common.utils.logger_config import setup_logging
 def test_bootstrap():
     setup_logging()
     logger = get_logger(__name__)
-    load_dotenv(".env.test")
+    load_dotenv(".env.test", override=True)
     logger.info("Loaded .env.test")
     logger.info("Test bootstrap completed. Starting tests...")
     yield
@@ -78,27 +88,31 @@ def client(test_async_engine: AsyncEngine):
     - 但 session 是新的
     """
 
-    async def override_get_async_session():
-        async for session in get_async_session(test_async_engine)():
-            yield session
+    override_get_async_session = async_session_factory(test_async_engine)
+
+    # 未來引入 transaction / rollback 使用以下版本
+    # async def override_get_async_session():
+    #     # async for ... yield session: 轉接 AsyncGenerator(_get_async_session) 給 FastAPI
+    #     async for session in async_session_factory(test_async_engine)():
+    #         yield session
 
     # 換插頭: dependency_overrides is a dict where we can define overrides for any dependencies used in our endpoints
+    # Override production DB dependency with test DB session
     app.dependency_overrides[get_async_session] = override_get_async_session
 
-    with TestClient(app) as client:
-        yield client
-
-    app.dependency_overrides.clear()
-
-
-# @pytest.fixture(scope="session", autouse=True)
-# async def setup_and_teardown():
-#     logger = get_logger(__name__)
-#     logger.info("Starting tests...")
-#     yield
-#     logger.info("Test Finished!")
+    try:
+        with TestClient(app) as client:
+            yield client
+    finally:
+        # 避免測試失敗時 overrides 沒清乾淨
+        app.dependency_overrides.clear()
 
 
-# @pytest.fixture(scope="module")
-# def client():
-#     return TestClient(app)
+@pytest.fixture
+def user_payload():
+    uid = uuid.uuid4().hex[:8]
+    return {
+        "email": f"user_{uid}@test.com",
+        "username": f"user_{uid}",
+        "password": "my_password",
+    }

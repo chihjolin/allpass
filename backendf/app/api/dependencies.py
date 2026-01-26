@@ -17,7 +17,7 @@ sync_url, async_url, engine, async_engine = make_engines(
     password=settings.POSTGRES_PASSWORD,
 )
 
-# 2. 產生 Dependency Function
+# 2. 產生 Dependency Function（async generator 綁定正式async_engine）
 get_async_session = async_session_factory(async_engine)
 
 
