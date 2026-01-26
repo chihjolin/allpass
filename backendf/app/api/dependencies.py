@@ -17,6 +17,18 @@ sync_url, async_url, engine, async_engine = make_engines(
     password=settings.POSTGRES_PASSWORD,
 )
 
+
+# # 更架構化的寫法
+# def get_engines():
+#     return make_engines(
+#         host=settings.POSTGRES_HOST,
+#         port=settings.POSTGRES_PORT,
+#         db=settings.POSTGRES_DB,
+#         user=settings.POSTGRES_USER,
+#         password=settings.POSTGRES_PASSWORD,
+#     )
+
+
 # 2. 產生 Dependency Function（async generator 綁定正式async_engine）
 get_async_session = async_session_factory(async_engine)
 

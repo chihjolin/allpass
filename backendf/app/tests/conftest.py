@@ -1,9 +1,10 @@
 # import pytest_asyncio
+import asyncio
 import os
 import uuid
+from pathlib import Path
 
 import pytest
-from app.api.dependencies import get_async_session  # type: ignore
 from app.main import app  # type: ignore
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
@@ -35,7 +36,9 @@ from common.utils.logger_config import setup_logging
 def test_bootstrap():
     setup_logging()
     logger = get_logger(__name__)
-    load_dotenv(".env.test", override=True)
+    env_path = Path(__file__).parent / ".env.test"
+    load_dotenv(dotenv_path=env_path, override=True)
+    # load_dotenv(".env.test", override=True)
     logger.info("Loaded .env.test")
     logger.info("Test bootstrap completed. Starting tests...")
     yield
@@ -50,6 +53,7 @@ async def test_async_engine():
     from app.database import models  # type: ignore
 
     logger = get_logger(__name__)
+
     (
         _,
         _,
@@ -74,6 +78,7 @@ async def test_async_engine():
         await conn.run_sync(SQLModel.metadata.drop_all)
 
     await async_engine.dispose()
+
     logger.info("Test DB dropped and engine disposed")
 
 
@@ -87,6 +92,7 @@ def client(test_async_engine: AsyncEngine):
     - 使用同一個 async_engine
     - 但 session 是新的
     """
+    from app.api.dependencies import get_async_session  # type: ignore
 
     override_get_async_session = async_session_factory(test_async_engine)
 
