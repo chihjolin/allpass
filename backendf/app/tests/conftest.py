@@ -45,7 +45,9 @@ def test_bootstrap():
 # ---------------------------------------------------
 # 建立「測試專用 async engine」（共用 dbcon）
 # ---------------------------------------------------
-@pytest_asyncio.fixture(scope="session")
+# @pytest_asyncio.fixture(scope="session")
+# @pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="session")
 async def test_async_engine():
     """
     建立全域測試用的 AsyncEngine，並負責 Schema 的建立與拆除
@@ -89,7 +91,8 @@ async def test_async_engine():
 # ---------------------------------------------------
 # AsyncClient + dependency override（關鍵）
 # ---------------------------------------------------
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture
+# @pytest_asyncio.fixture(scope="function")
 async def async_client(
     test_async_engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncClient, None]:
@@ -99,7 +102,7 @@ async def async_client(
     # async_session_factory 回傳的是一個 dependency function (closure)
     override_get_async_session = async_session_factory(test_async_engine)
 
-    # 未來引入 transaction / rollback 使用以下版本
+    # # 未來引入 transaction / rollback 使用以下版本
     # async def override_get_async_session():
     #     # async for ... yield session: 轉接 AsyncGenerator(_get_async_session) 給 FastAPI
     #     async for session in async_session_factory(test_async_engine)():
