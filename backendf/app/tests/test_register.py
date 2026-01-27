@@ -1,12 +1,15 @@
-from fastapi.testclient import TestClient
+# from fastapi.testclient import TestClient
+import pytest
+from httpx import AsyncClient
 
 from common.utils.logger import get_logger
 
 logger = get_logger(__name__)  # 使用自訂 logger
 
 
-def test_register_success(client: TestClient, user_payload):
-    response = client.post("/users/register", json=user_payload)
+@pytest.mark.asyncio
+async def test_register_success(async_client: AsyncClient, user_payload):
+    response = await async_client.post("/users/register", json=user_payload)
 
     assert response.status_code == 201
     data = response.json()
@@ -15,12 +18,13 @@ def test_register_success(client: TestClient, user_payload):
     assert "username" in data
 
 
-def test_register_duplicate_email(client, user_payload):
+@pytest.mark.asyncio
+async def test_register_duplicate_email(async_client: AsyncClient, user_payload):
 
     # 第一次註冊（成功）
-    res1 = client.post("/users/register", json=user_payload)
+    res1 = await async_client.post("/users/register", json=user_payload)
     assert res1.status_code == 201
 
-    # 第二次用「同一個 email」註冊
-    res2 = client.post("/users/register", json=user_payload)
+    # 第二次用「同一個 email」註冊（預期失敗）
+    res2 = await async_client.post("/users/register", json=user_payload)
     assert res2.status_code == 400

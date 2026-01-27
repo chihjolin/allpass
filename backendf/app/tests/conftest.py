@@ -1,25 +1,23 @@
-# import pytest_asyncio
 import asyncio
 import os
 import uuid
 from pathlib import Path
+from typing import AsyncGenerator
 
 import pytest
+import pytest_asyncio
 from app.main import app  # type: ignore
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
-
-# from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-# from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
 from common.utils.dbcon import get_async_session as async_session_factory
 from common.utils.dbcon import make_engines
 from common.utils.logger import get_logger
 from common.utils.logger_config import setup_logging
-
-# from httpx import ASGITransport, AsyncClient
 
 # ---------------------------------------------------
 # 整體測試流程
@@ -38,7 +36,6 @@ def test_bootstrap():
     logger = get_logger(__name__)
     env_path = Path(__file__).parent / ".env.test"
     load_dotenv(dotenv_path=env_path, override=True)
-    # load_dotenv(".env.test", override=True)
     logger.info("Loaded .env.test")
     logger.info("Test bootstrap completed. Starting tests...")
     yield
@@ -48,8 +45,11 @@ def test_bootstrap():
 # ---------------------------------------------------
 # 建立「測試專用 async engine」（共用 dbcon）
 # ---------------------------------------------------
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def test_async_engine():
+    """
+    建立全域測試用的 AsyncEngine，並負責 Schema 的建立與拆除
+    """
     from app.database import models  # type: ignore
 
     logger = get_logger(__name__)
@@ -67,33 +67,36 @@ async def test_async_engine():
         db=os.getenv("POSTGRES_DB"),
     )
 
-    # 建schema
+    # ---------- setup ----------
+    # 建 schema + tables
     async with async_engine.begin() as conn:
+        # 建立 schema（若不存在）
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS user_gpx"))
+        # 建立table
         await conn.run_sync(SQLModel.metadata.create_all)
 
     yield async_engine
 
-    # tear down
+    # ---------- teardown ----------
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
+        # await conn.execute(text("DROP SCHEMA IF EXISTS user_gpx CASCADE"))
 
     await async_engine.dispose()
-
     logger.info("Test DB dropped and engine disposed")
 
 
 # ---------------------------------------------------
-# TestClient + dependency override（關鍵）
+# AsyncClient + dependency override（關鍵）
 # ---------------------------------------------------
-@pytest.fixture(scope="function")
-def client(test_async_engine: AsyncEngine):
-    """
-    每個 test function:
-    - 使用同一個 async_engine
-    - 但 session 是新的
-    """
+@pytest_asyncio.fixture(scope="function")
+async def async_client(
+    test_async_engine: AsyncEngine,
+) -> AsyncGenerator[AsyncClient, None]:
     from app.api.dependencies import get_async_session  # type: ignore
 
+    # 1. 準備 Override 函式
+    # async_session_factory 回傳的是一個 dependency function (closure)
     override_get_async_session = async_session_factory(test_async_engine)
 
     # 未來引入 transaction / rollback 使用以下版本
@@ -102,15 +105,20 @@ def client(test_async_engine: AsyncEngine):
     #     async for session in async_session_factory(test_async_engine)():
     #         yield session
 
-    # 換插頭: dependency_overrides is a dict where we can define overrides for any dependencies used in our endpoints
+    # 2. 換插頭: dependency_overrides is a dict where we can define overrides for any dependencies used in our endpoints
     # Override production DB dependency with test DB session
     app.dependency_overrides[get_async_session] = override_get_async_session
 
+    # 3. 啟動 AsyncClient
+    # ASGITransport 讓請求直接在記憶體中傳遞給 FastAPI app，不走網路
     try:
-        with TestClient(app) as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
             yield client
     finally:
-        # 避免測試失敗時 overrides 沒清乾淨
+        # 4. 清理, 避免測試失敗時 overrides 沒清乾淨
         app.dependency_overrides.clear()
 
 
