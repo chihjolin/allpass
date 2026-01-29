@@ -21,7 +21,7 @@ class UserService:
         existing = await self.repo.get_by_email_or_username(data.email, data.username)
         if existing:
             # Service 層丟 domain error
-            raise UserAlreadyExistsError("Email or username already exists")
+            raise UserAlreadyExistsError("Email or username already exists!")
 
         # 2. 資料轉換 (將 DTO 轉為 Model)
         user = Users(
