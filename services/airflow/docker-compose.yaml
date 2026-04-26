@@ -55,10 +55,25 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__CORE__FERNET_KEY: ''
+    # AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${AIRFLOW_DB}
+    # customized: retry(wait for DB ready)
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_PRE_PING: True
+    # customized
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE: 1800
+    # AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${AIRFLOW_DB}
+    # AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CELERY__BROKER_URL: redis://${REDIS_HOST}:6379/${REDIS_DB}
+    # customized
+    AIRFLOW__CELERY__BROKER_CONNECTION_RETRY_ON_STARTUP: True
+    # customized
+    AIRFLOW__CELERY__BROKER_TRANSPORT_OPTIONS__visibility_timeout: 21600
+    # customized
+    AIRFLOW__CELERY__TASK_TRACK_STARTED: True
+    # FERNET_KEY is necessary in production
+    # created through 'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+    AIRFLOW__CORE__FERNET_KEY: '_GkSXuhua-bkMPlW-8JXnRUewpGl5IU3MC_9q-r0E0Q='
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
@@ -72,6 +87,10 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    # customized
+    AIRFLOW__CELERY__WORKER_CONCURRENCY: 2
+    # customized
+    AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER: 1
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -81,42 +100,36 @@ x-airflow-common:
   user: "${AIRFLOW_UID:-50000}:0"
   group_add:
     - 989
-  depends_on:
-    &airflow-common-depends-on
-    redis:
-      condition: service_healthy
-    postgres:
-      condition: service_healthy
 
 services:
-  postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 10s
-      retries: 5
-      start_period: 5s
-    restart: always
+  # postgres:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_USER: airflow
+  #     POSTGRES_PASSWORD: airflow
+  #     POSTGRES_DB: airflow
+  #   volumes:
+  #     - postgres-db-volume:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "airflow"]
+  #     interval: 10s
+  #     retries: 5
+  #     start_period: 5s
+  #   restart: always
 
-  redis:
-    # Redis is limited to 7.2-bookworm due to licencing change
-    # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
-    image: redis:7.2-bookworm
-    expose:
-      - 6379
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 30s
-      retries: 50
-      start_period: 30s
-    restart: always
+  # redis:
+  #   # Redis is limited to 7.2-bookworm due to licencing change
+  #   # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
+  #   image: redis:7.2-bookworm
+  #   expose:
+  #     - 6379
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 30s
+  #     retries: 50
+  #     start_period: 30s
+  #   restart: always
 
   airflow-apiserver:
     <<: *airflow-common
@@ -133,9 +146,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
   airflow-scheduler:
     <<: *airflow-common
@@ -148,9 +162,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -163,9 +178,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
   airflow-worker:
     <<: *airflow-common
@@ -186,11 +202,12 @@ services:
       DUMB_INIT_SETSID: "0"
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-apiserver:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
   airflow-triggerer:
     <<: *airflow-common
@@ -203,9 +220,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
   airflow-init:
     <<: *airflow-common
@@ -298,6 +316,8 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
+    networks:
+      - allpass-network
 
   airflow-cli:
     <<: *airflow-common
@@ -311,8 +331,10 @@ services:
       - bash
       - -c
       - airflow
-    depends_on:
-      <<: *airflow-common-depends-on
+    # depends_on:
+    #   <<: *airflow-common-depends-on
+    networks:
+      - allpass-network
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
@@ -332,9 +354,15 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - allpass-network
 
 volumes:
   postgres-db-volume:
+
+networks:
+  allpass-network:
+    external: true
+    name: allpass_allpass-network
