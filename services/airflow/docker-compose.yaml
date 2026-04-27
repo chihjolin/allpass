@@ -102,35 +102,6 @@ x-airflow-common:
     - 989
 
 services:
-  # postgres:
-  #   image: postgres:13
-  #   environment:
-  #     POSTGRES_USER: airflow
-  #     POSTGRES_PASSWORD: airflow
-  #     POSTGRES_DB: airflow
-  #   volumes:
-  #     - postgres-db-volume:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD", "pg_isready", "-U", "airflow"]
-  #     interval: 10s
-  #     retries: 5
-  #     start_period: 5s
-  #   restart: always
-
-  # redis:
-  #   # Redis is limited to 7.2-bookworm due to licencing change
-  #   # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
-  #   image: redis:7.2-bookworm
-  #   expose:
-  #     - 6379
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 30s
-  #     retries: 50
-  #     start_period: 30s
-  #   restart: always
-
   airflow-apiserver:
     <<: *airflow-common
     command: api-server

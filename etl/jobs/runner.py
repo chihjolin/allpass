@@ -3,6 +3,8 @@ import os
 
 # from etl.jobs.join_features import run_join_features_job
 from . import join_features, load_geofeatures_to_redis
+from jobs import pipeline_test
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
@@ -27,6 +29,12 @@ def main():
         logger.info("Start load_geofeatures_to_redis job")
         load_geofeatures_to_redis.run_load_geofeatures_to_redis()
         logger.info("Finish load_geofeatures_to_redis job")
+
+    if JOB in ["pipeline_test", "all"]:
+        logger.info("Start pipeline_test job")
+        pipeline_test.run_pipeline_test()
+        logger.info("Finish pipeline_test job")
+
 
 
 if __name__ == "__main__":
