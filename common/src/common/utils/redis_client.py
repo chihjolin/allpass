@@ -1,13 +1,13 @@
-import os
+from typing import Optional
 
 import redis
 
 
-def get_redis_client():
+def get_redis_client(host: str, port: int, password: Optional[str] = None, db: int = 0):
     return redis.Redis(
-        # host="localhost",
-        host=os.getenv("REDIS_HOST", "redis"),
-        port=int(os.getenv("REDIS_PORT", 6379)),
-        password=os.getenv("REDIS_PASSWORD", None),
+        host=host,
+        port=port,
+        password=password,
+        db=db,
         decode_responses=True,
     )

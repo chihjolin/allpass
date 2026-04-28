@@ -1,8 +1,9 @@
-from airflow import DAG
-from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 
-default_args ={
+from airflow import DAG  # type: ignore
+from airflow.providers.docker.operators.docker import DockerOperator  # type: ignore
+
+default_args = {
     "retries": 1,
 }
 
@@ -12,27 +13,26 @@ with DAG(
     # schedule="0 22 * * *",
     schedule=None,
     catchup=False,
-)as dag:
-    
+    default_args=default_args,
+) as dag:
+
     run_pipeline_test = DockerOperator(
         task_id="run_pipeline_test",
         docker_url="unix://var/run/docker.sock",
-        image="your-etl-image:latest",  # ⚠️ 你自己的 ETL image (要自建)
+        image="allpass-etl:latest",  # 你自己的 ETL image (要自建)
         command="python -m jobs.runner",
         environment={
             "JOB": "pipeline_test",
-
             # DB
             "POSTGRES_HOST": "postgis",
             "POSTGRES_PORT": "5432",
             "POSTGRES_DB": "allpass_db",
             "POSTGRES_USER": "allpass_user",
             "POSTGRES_PASSWORD": "allpass",
-
             # Redis
             "REDIS_HOST": "redis",
             "REDIS_DB": "1",
         },
-        network_mode="allpass-network",  # ⚠️ 很重要
+        network_mode="allpass-network",  # 很重要
         auto_remove="success",
     )
