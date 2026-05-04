@@ -20,9 +20,9 @@ with DAG(
         task_id="run_pipeline_test",
         docker_url="unix://var/run/docker.sock",
         image="allpass-etl:latest",  # 你自己的 ETL image (要自建)
-        command="python -m jobs.runner",
+        command=None,
         environment={
-            "JOB": "pipeline_test",
+            "ETL_JOB": "pipeline_test",
             # DB
             "POSTGRES_HOST": "postgis",
             "POSTGRES_PORT": "5432",
@@ -34,5 +34,5 @@ with DAG(
             "REDIS_DB": "1",
         },
         network_mode="allpass-network",  # 很重要
-        auto_remove="success",
+        auto_remove="False",  # Debug階段先設False
     )

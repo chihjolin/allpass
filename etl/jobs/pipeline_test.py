@@ -39,27 +39,21 @@ def run_pipeline_test():
 
     with engine.begin() as conn:
         # 建測試表
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS etl_pipeline_test (
                 id SERIAL PRIMARY KEY,
                 source VARCHAR(50),
                 message TEXT,
                 created_at TIMESTAMP
                 );
-                """
-            )
-        )
+                """))
 
         # insert 一筆
         conn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO etl_pipeline_test (source, message, created_at)
                 VALUES (:source, :message, :created_at)
-                """
-            ),
+                """),
             {
                 "source": "airflow",
                 "message": "pipeline ok",

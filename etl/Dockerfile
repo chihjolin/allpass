@@ -4,6 +4,7 @@ FROM python:3.12-slim
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 # 複製 common 並安裝
 COPY common/ /app/common
@@ -24,4 +25,6 @@ WORKDIR /app
 
 # 預設 CMD: 初始化後觸發 runner
 #CMD ["python", "etl/runner_entry.py"]
-CMD ["python", "-m", "etl.runner_entry"]
+# CMD ["python", "-m", "etl.runner_entry"]
+# 輕量化: 先忽略init db, 避免跑所有jobs
+CMD ["python", "-m", "etl.jobs.runner"]
