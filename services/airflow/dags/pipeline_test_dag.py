@@ -31,8 +31,8 @@ with DAG(
             "POSTGRES_PASSWORD": "allpass",
             # Redis
             "REDIS_HOST": "redis",
-            "REDIS_DB": "1",
+            "REDIS_DB": "0",  # ETL 寫入的Redis
         },
         network_mode="allpass-network",  # 很重要
-        auto_remove="False",  # Debug階段先設False
+        auto_remove="never",  # Debug階段先設never
     )

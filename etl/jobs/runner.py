@@ -1,10 +1,10 @@
 import logging
 import os
 
-from jobs import pipeline_test
+from . import pipeline_test
 
 # from etl.jobs.join_features import run_join_features_job
-from . import join_features, load_geofeatures_to_redis
+from etl.jobs import join_features, load_geofeatures_to_redis
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
